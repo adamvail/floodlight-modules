@@ -101,11 +101,9 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
   @Override
   public net.floodlightcontroller.core.IListener.Command receive(
       IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
-    // TODO Auto-generated method stub
-    //logger.info("Receive a packet!");
     
-    // look to see if we should drop the packet
-        
+	return Command.CONTINUE;
+       /*
     Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);  
     
     if(eth.getEtherType() != Ethernet.TYPE_IPv4){
@@ -126,6 +124,7 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
     }
 
         return Command.CONTINUE;
+        */
   }
   
   /**
@@ -216,8 +215,7 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
   @Override
   public void addedSwitch(IOFSwitch sw) {
     // TODO Auto-generated method stub
-    
-
+    dropPacketsH1ToH8(sw);
   }
 
   @Override
@@ -239,16 +237,29 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
   private void dropPacketsH1ToH8(IOFSwitch sw){
     OFFlowMod rule = (OFFlowMod)(OFFlowMod)floodlightProvider.getOFMessageFactory().getMessage(OFType.FLOW_MOD);
     rule.setType(OFType.FLOW_MOD);
-      rule.setCommand(OFFlowMod.OFPFC_ADD);
+    rule.setCommand(OFFlowMod.OFPFC_ADD);
         
-      OFMatch match = new OFMatch();
+    OFMatch match = new OFMatch();
     match.setWildcards(~(OFMatch.OFPFW_DL_TYPE | OFMatch.OFPFW_DL_SRC | OFMatch.OFPFW_DL_DST | OFMatch.OFPFW_NW_PROTO | OFMatch.OFPFW_TP_DST));
     match.setDataLayerType((short)0x0800);
     match.setDataLayerSource("00:00:00:01");
     match.setDataLayerDestination("00:00:00:08");
     match.setNetworkProtocol(IPv4.PROTOCOL_TCP);
     match.setTransportDestination((short)80);
-    //match.setNetworkSource(networkSource);
-  
+    
+    rule.setMatch(match);
+    rule.setIdleTimeout((short)0);
+    rule.setHardTimeout((short)0);
+    rule.setBufferId(OFPacketOut.BUFFER_ID_NONE);
+    rule.setPriority((short)5000);
+    rule.setLength((short)OFFlowMod.MINIMUM_LENGTH);
+    
+    try{
+    	sw.write(rule, null);
+    	sw.flush();
+    }catch(Exception e){
+    	logger.error("Could not send drop packet rule in Firewall to switch");
+    }
+    
   }
 }
