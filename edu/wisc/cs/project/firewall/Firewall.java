@@ -235,6 +235,7 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
    */
   
   private void dropPacketsH1ToH8(IOFSwitch sw){
+	logger.debug("Installing static rule to drop traffic between h1 and h8-------------------");
     OFFlowMod rule = (OFFlowMod)(OFFlowMod)floodlightProvider.getOFMessageFactory().getMessage(OFType.FLOW_MOD);
     rule.setType(OFType.FLOW_MOD);
     rule.setCommand(OFFlowMod.OFPFC_ADD);
@@ -242,8 +243,8 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
     OFMatch match = new OFMatch();
     match.setWildcards(~(OFMatch.OFPFW_DL_TYPE | OFMatch.OFPFW_DL_SRC | OFMatch.OFPFW_DL_DST | OFMatch.OFPFW_NW_PROTO | OFMatch.OFPFW_TP_DST));
     match.setDataLayerType((short)0x0800);
-    match.setDataLayerSource("00:00:00:01");
-    match.setDataLayerDestination("00:00:00:08");
+    match.setDataLayerSource("00:00:00:00:00:01");
+    match.setDataLayerDestination("00:00:00:00:00:08");
     match.setNetworkProtocol(IPv4.PROTOCOL_TCP);
     match.setTransportDestination((short)80);
     
