@@ -40,10 +40,9 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
 
   protected IFloodlightProviderService floodlightProvider;
   protected static Logger logger;
-  protected HashMap<Long, Short> lookupTable = new HashMap<Long, Short>(); 
   
-    protected static short FLOWMOD_DEFAULT_IDLE_TIMEOUT = 60; // in seconds
-    protected static short FLOWMOD_DEFAULT_HARD_TIMEOUT = 0; // infinite
+  protected static short FLOWMOD_DEFAULT_IDLE_TIMEOUT = 60; // in seconds
+  protected static short FLOWMOD_DEFAULT_HARD_TIMEOUT = 0; // infinite
 
   @Override
   public String getName() {
@@ -260,7 +259,6 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
     	sw.flush();
     }catch(Exception e){
     	logger.error("Could not send drop packet rule in Firewall to switch");
-    }
-    
+    }    
   }
 }

