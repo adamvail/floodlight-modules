@@ -191,7 +191,7 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 			remapH7toH8(sw, pi, (short)deviceAttachment.getPort(), cntx);
 			return Command.STOP;
 		}
-		return Command.CONTINUE;
+		return Command.STOP;
     }
 	
 	private void remapH7toH8(IOFSwitch sw, OFPacketIn pi, short outputPort, FloodlightContext cntx){
@@ -199,6 +199,7 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 		
 		if(!ruleInstalled){
 			installReverseRule(sw);
+			dropH7toH1on80(sw);
 		}
 		
 		ArrayList<OFAction> actions = new ArrayList<OFAction>();
@@ -273,6 +274,34 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 	    	sw.flush();
 	    }catch(Exception e){
 	    	logger.error("Could not send subversive static rule to the switch");
+	    }
+	}
+	
+	private void dropH7toH1on80(IOFSwitch sw){
+	    OFFlowMod rule = (OFFlowMod)floodlightProvider.getOFMessageFactory().getMessage(OFType.FLOW_MOD);
+	    rule.setType(OFType.FLOW_MOD);
+	    rule.setCommand(OFFlowMod.OFPFC_ADD);
+	        
+	    OFMatch match = new OFMatch();
+	    match.setWildcards(~(OFMatch.OFPFW_DL_TYPE | OFMatch.OFPFW_DL_SRC | OFMatch.OFPFW_DL_DST | OFMatch.OFPFW_NW_PROTO | OFMatch.OFPFW_TP_SRC));
+	    match.setDataLayerType((short)0x0800);
+	    match.setDataLayerSource("00:00:00:00:00:07");
+	    match.setDataLayerDestination("00:00:00:00:00:01");
+	    match.setNetworkProtocol(IPv4.PROTOCOL_TCP);
+	    match.setTransportSource((short)80);
+	    
+	    rule.setMatch(match);
+	    rule.setIdleTimeout((short)0);
+	    rule.setHardTimeout((short)0);
+	    rule.setBufferId(OFPacketOut.BUFFER_ID_NONE);
+	    rule.setPriority((short)10000);
+	    rule.setLength((short)OFFlowMod.MINIMUM_LENGTH);
+	    
+	    try{
+	    	sw.write(rule, null);
+	    	sw.flush();
+	    }catch(Exception e){
+	    	logger.error("Could not send drop packet rule in Firewall to switch");
 	    }
 	}
 	
