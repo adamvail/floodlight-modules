@@ -236,7 +236,7 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
   
   private void dropPacketsH1ToH8(IOFSwitch sw){
 	logger.debug("Installing static rule to drop traffic between h1 and h8-------------------");
-    OFFlowMod rule = (OFFlowMod)(OFFlowMod)floodlightProvider.getOFMessageFactory().getMessage(OFType.FLOW_MOD);
+    OFFlowMod rule = (OFFlowMod)floodlightProvider.getOFMessageFactory().getMessage(OFType.FLOW_MOD);
     rule.setType(OFType.FLOW_MOD);
     rule.setCommand(OFFlowMod.OFPFC_ADD);
         
