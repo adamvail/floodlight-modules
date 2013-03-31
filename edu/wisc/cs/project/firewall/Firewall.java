@@ -149,15 +149,15 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
         // Set data if it is included in the packet in but buffer id is NONE
         if (pi.getBufferId() == OFPacketOut.BUFFER_ID_NONE) {
             byte[] packetData = pi.getPacketData();
-            po.setLength(U16.t(OFPacketOut.MINIMUM_LENGTH
-                     po.getActionsLength()  packetData.length));
+            po.setLength(U16.t(OFPacketOut.MINIMUM_LENGTH +
+                     po.getActionsLength() + packetData.length));
             po.setPacketData(packetData);
         } else {
-            po.setLength(U16.t(OFPacketOut.MINIMUM_LENGTH
+            po.setLength(U16.t(OFPacketOut.MINIMUM_LENGTH +
                      po.getActionsLength()));
         }        
         
-        logger.debug("Push packet to switch: "po);
+        logger.debug("Push packet to switch: " + po);
         
         // Push the packet to the switch
         try {
@@ -178,11 +178,11 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
           po.setActionsLength((short)OFActionOutput.MINIMUM_LENGTH);
         }
         else if(actions.size() == 2){
-          po.setActionsLength(((short)(OFActionOutput.MINIMUM_LENGTH  OFActionTransportLayerDestination.MINIMUM_LENGTH)));
+          po.setActionsLength(((short)(OFActionOutput.MINIMUM_LENGTH + OFActionTransportLayerDestination.MINIMUM_LENGTH)));
           //logger.info("Sending packet from port 80 destined for 443!");
         }
         else if(actions.size() == 3){
-          po.setActionsLength(((short)(OFActionOutput.MINIMUM_LENGTH  OFActionTransportLayerDestination.MINIMUM_LENGTH  OFActionTransportLayerSource.MINIMUM_LENGTH)));  
+          po.setActionsLength(((short)(OFActionOutput.MINIMUM_LENGTH + OFActionTransportLayerDestination.MINIMUM_LENGTH + OFActionTransportLayerSource.MINIMUM_LENGTH)));  
         }
         else{
           logger.info("MORE THAN 2 ACTIONS IN ARRAY....WTF?");
@@ -194,11 +194,11 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
         
         if (pi.getBufferId() == 0xffffffff) {
             byte[] packetData = pi.getPacketData();
-            po.setLength(U16.t(OFPacketOut.MINIMUM_LENGTH
-                     po.getActionsLength()  packetData.length));
+            po.setLength(U16.t(OFPacketOut.MINIMUM_LENGTH +
+                     po.getActionsLength() + packetData.length));
             po.setPacketData(packetData);
         } else {
-            po.setLength(U16.t(OFPacketOut.MINIMUM_LENGTH
+            po.setLength(U16.t(OFPacketOut.MINIMUM_LENGTH +
                      po.getActionsLength()));
         }
         
