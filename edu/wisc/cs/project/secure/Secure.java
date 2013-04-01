@@ -1,10 +1,13 @@
 package edu.wisc.cs.project.secure;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import net.floodlightcontroller.core.IOFSwitch;
 
 import org.openflow.protocol.OFFlowMod;
+import org.openflow.protocol.OFMatch;
 import org.openflow.protocol.action.OFAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +15,8 @@ import org.slf4j.LoggerFactory;
 public class Secure {
 	
 	protected static Logger logger = LoggerFactory.getLogger(Secure.class);
+	
+	private HashMap<Long, HashSet<Alias>> aliasSet = new HashMap<Long, HashSet<Alias>>();
 	
 	/**
 	 * This function is used in OFSwitchBase to check rules in the
@@ -29,6 +34,7 @@ public class Secure {
 		
 		for(OFAction action : actions){
 			logger.debug("Switch " + sw.getId() + ": " + action.toString());
+			
 		}
 		
 		return true;
