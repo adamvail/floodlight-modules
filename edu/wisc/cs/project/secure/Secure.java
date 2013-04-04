@@ -7,7 +7,6 @@ import java.util.List;
 import net.floodlightcontroller.core.IOFSwitch;
 
 import org.openflow.protocol.OFFlowMod;
-import org.openflow.protocol.OFMatch;
 import org.openflow.protocol.action.OFAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +28,9 @@ public class Secure {
 	
 	public static boolean checkFlowRule(OFFlowMod rule, IOFSwitch sw){
 		
-		logger.debug("------------Secure just received a rule!---------------");
+		Alias alias = null;
+		
+		//logger.debug("------------Secure just received a rule!---------------");
 		List<OFAction> actions = rule.getActions();
 		
 		for(OFAction action : actions){
@@ -37,7 +38,15 @@ public class Secure {
 			
 		}
 		
-		return true;
+		return addAlias(sw, alias);
 	}
 
+	// function for adding a alias to the set, checks to see if there are conflicts
+	// in the set already
+	// this is the brains of the set conflict checking
+	private static boolean addAlias(IOFSwitch sw, Alias alias){
+		
+		return true;
+	}
+	
 }

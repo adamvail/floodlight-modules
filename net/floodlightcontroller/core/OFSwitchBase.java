@@ -189,6 +189,7 @@ public abstract class OFSwitchBase implements IOFSwitch {
             throws IOException {
     	// Interpose here to build the view of current rules
     	// on the switch
+    	/*
     	if(m.getType() == OFType.FLOW_MOD){
     		if(!Secure.checkFlowRule((OFFlowMod)m, this)){
     			// throw an exception or something
@@ -199,7 +200,7 @@ public abstract class OFSwitchBase implements IOFSwitch {
     			return;
     		}
     	}
-    	
+    	*/
         Map<IOFSwitch,List<OFMessage>> msg_buffer_map = local_msg_buffer.get();
         List<OFMessage> msg_buffer = msg_buffer_map.get(this);
         if (msg_buffer == null) {
