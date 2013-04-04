@@ -177,7 +177,7 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
         	ArrayList<OFAction> action = new ArrayList<OFAction>();
         	OFActionOutput outputPort = new OFActionOutput((short)deviceAttachment.getPort());
         	action.add(outputPort);
-        	pushPacket(sw, pi, cntx, action, (short)OFActionOutput.MINIMUM_LENGTH);
+        	pushPacket(sw, pi, action, (short)OFActionOutput.MINIMUM_LENGTH);
         	
         	// let another module process this packet as well
         	return Command.CONTINUE;
@@ -188,24 +188,24 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 				match.getNetworkProtocol() == IPv4.PROTOCOL_TCP  &&
 				match.getTransportDestination() == (short)80){
 			
-			remapH7toH8(sw, pi, (short)deviceAttachment.getPort(), cntx);
+			remapH7toH8(sw, pi, (short)deviceAttachment.getPort());
 			return Command.STOP;
 		}
 		return Command.STOP;
     }
 	
-	private void remapH7toH8(IOFSwitch sw, OFPacketIn pi, short outputPort, FloodlightContext cntx){
+	private void remapH7toH8(IOFSwitch sw, OFPacketIn pi, short outputPort){
 		logger.debug("-----------REMAP THIS PACKET TO GO TO H8 INSTEAD OF H7--------------\n");
 		
 		if(!ruleInstalled){
+			installRemapRule(sw, pi, outputPort);
 			installReverseRule(sw);
 			dropH7toH1on80(sw);
 		}
 		
-		ArrayList<OFAction> actions = new ArrayList<OFAction>();
+		// Handle the packet that the controller got. This gets done subsequently by the rule in the flowtable
 		
-		// TODO the destination address isn't getting rewritten for some reason.
-		// INVESTIGATE!!!
+		ArrayList<OFAction> actions = new ArrayList<OFAction>();
 		
 		OFActionDataLayerDestination dlDst = new OFActionDataLayerDestination(Ethernet.toMACAddress("00:00:00:00:00:08"));
 		actions.add(dlDst);
@@ -216,8 +216,59 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 		OFActionOutput outputTo = new OFActionOutput(outputPort);
 		actions.add(outputTo);
 				
-		pushPacket(sw, pi, cntx, actions, (short)(OFActionOutput.MINIMUM_LENGTH + OFActionNetworkLayerDestination.MINIMUM_LENGTH +
+		pushPacket(sw, pi, actions, (short)(OFActionOutput.MINIMUM_LENGTH + OFActionNetworkLayerDestination.MINIMUM_LENGTH +
 				OFActionDataLayerDestination.MINIMUM_LENGTH));
+	}
+	
+	private void installRemapRule(IOFSwitch sw, OFPacketIn pi, short outputPort){
+		ruleInstalled = true;
+		
+		logger.debug("INSTALLING REMAP RULE!");
+		
+		OFFlowMod rule = (OFFlowMod)floodlightProvider.getOFMessageFactory().getMessage(OFType.FLOW_MOD);
+		rule.setType(OFType.FLOW_MOD);
+		rule.setCommand(OFFlowMod.OFPFC_ADD);
+		
+		OFMatch match = new OFMatch();
+		match.loadFromPacket(pi.getPacketData(), pi.getInPort());
+		match.setWildcards(~(OFMatch.OFPFW_DL_SRC | OFMatch.OFPFW_DL_DST | OFMatch.OFPFW_DL_TYPE | OFMatch.OFPFW_NW_PROTO | OFMatch.OFPFW_TP_DST));
+		match.setDataLayerType((short)0x0800);
+		match.setDataLayerSource("00:00:00:00:00:01");
+		match.setDataLayerDestination("00:00:00:00:00:07");
+		match.setNetworkProtocol(IPv4.PROTOCOL_TCP);
+		match.setTransportDestination((short)80);
+		
+		rule.setMatch(match);
+		
+		ArrayList<OFAction> actions = new ArrayList<OFAction>();
+		OFActionDataLayerDestination dlDst = new OFActionDataLayerDestination(Ethernet.toMACAddress("00:00:00:00:00:08"));
+		actions.add(dlDst);
+		
+		OFActionNetworkLayerDestination nwDest = new OFActionNetworkLayerDestination(IPv4.toIPv4Address("10.0.0.8"));		
+		actions.add(nwDest);
+		
+		OFActionOutput outputTo = new OFActionOutput(outputPort);
+		actions.add(outputTo);
+		
+		rule.setActions(actions);
+		
+		rule.setBufferId(OFPacketOut.BUFFER_ID_NONE);
+	    rule.setIdleTimeout((short)0);
+	    rule.setHardTimeout((short)0);
+	    rule.setPriority((short)11000);
+	    rule.setLength((short)(OFFlowMod.MINIMUM_LENGTH + OFActionOutput.MINIMUM_LENGTH + OFActionNetworkLayerDestination.MINIMUM_LENGTH +
+				OFActionDataLayerDestination.MINIMUM_LENGTH));
+		
+		try {
+			sw.write(rule, null);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			logger.debug("----COULD NOT WRITE REMAP RULE TO SWITCH WITH H8 CONNECTED TO IT");
+		}	
+	}
+	
+	private void installForwardingRule(){
+		// rule for switches that are not connected to H8. This may not make sense....hold that thought
 	}
 	
 	private void installReverseRule(IOFSwitch sw){
@@ -308,7 +359,7 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 	/**
 	 * Sends a packet out to the switch
 	 */
-	private void pushPacket(IOFSwitch sw, OFPacketIn pi, FloodlightContext cntx, 
+	private void pushPacket(IOFSwitch sw, OFPacketIn pi, 
 			ArrayList<OFAction> actions, short actionsLength) {
 		
 		// create an OFPacketOut for the pushed packet
@@ -468,79 +519,4 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 	    }
 	}
 
-	/**
-	 * Performs routing based on a packet-in OpenFlow message for an 
-	 * IPv4 packet.
-	 */
-/*
-	private void routeFlow(IOFSwitch sw, OFPacketIn pi) {	
-		// Create match based on packet
-        OFMatch match = new OFMatch();
-        match.loadFromPacket(pi.getPacketData(), pi.getInPort());
-        
-        // Get destination MAC and destination IP address
-        long dl_dst = Ethernet.toLong(match.getDataLayerDestination());
-        int nw_dst = match.getNetworkDestination();
-		
-        // Find switch and port to which destination device is connected
-        SwitchPort deviceAttachment = findDeviceAttachment(dl_dst, nw_dst);
-        if (null == deviceAttachment) {
-        	logger.debug("Device attachement is unknown");
-        	return;
-        	// TODO: Handle case where device is not known
-        }
-        
-        // get list of switches
-        Map<Long, Vertex> vertices = new HashMap<Long, Vertex>();      
-        // get list of links
-        Map<Long, Set<Link>> links = linkDiscoveryProvider.getSwitchLinks();
-        // add each switch as a vertex
-        Map<Long, IOFSwitch> switches = floodlightProvider.getSwitches();
-        Iterator<IOFSwitch> switchIterator = switches.values().iterator();
-		while (switchIterator.hasNext()) {
-			IOFSwitch sw2 = switchIterator.next();
-			Vertex v = new Vertex(sw2.getId());
-			vertices.put(sw2.getId(), v);
-			
-		}
-		switchIterator = switches.values().iterator();
-		while (switchIterator.hasNext()) {
-			
-			IOFSwitch sw2 = switchIterator.next();
-			Vertex v = vertices.get(sw2.getId());
-			
-			Set<Link> switchLinks = links.get(sw2.getId());
-			int i = 0;
-			
-			Edge[] edges = new Edge[switchLinks.size()];
-			Iterator<Link> iter = switchLinks.iterator();
-			while(iter.hasNext()){
-				Link l = iter.next();
-				long dstDPID = l.getDst();
-				Vertex dstVertex = vertices.get(dstDPID);
-				Edge e = new Edge(dstVertex, 1);
-				edges[i] = e;
-				i++;
-			}
-			
-			// Set adjacentcies for this switch
-			v.adjacencies = edges;
-			
-		}
-        
-        Vertex srcVertex = vertices.get(sw.getId());
-        Dijkstra.computePaths(srcVertex);
-        
-        Vertex dstVertex = vertices.get(deviceAttachment.getSwitchDPID());
-		List<Vertex> path = Dijkstra.getShortestPathTo(dstVertex);
-        
-		for(Vertex v: path){
-			logger.debug(v.toString());
-		}
-        // TODO: Find path through the network
-          
-        // Consult the code in the example function in Dijkstra.java for an example
-        // on using Dijkstra's algorithm to find the shortest path through a graph
-	}
-*/
 }
