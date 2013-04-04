@@ -158,36 +158,33 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 			// Allow the next module to also process this OpenFlow message
 		    return Command.CONTINUE;
 		}
-				
-		// Figure out if I'm connected to H8, if I am, then move forward
-		// otherwise push the packet and return
-        long dl_dst = Ethernet.toLong(Ethernet.toMACAddress("00:00:00:00:00:08"));
-        int nw_dst = IPv4.toIPv4Address("10.0.0.8");
 		
-        // Find switch and port to which destination device is connected
-        SwitchPort deviceAttachment = findDeviceAttachment(dl_dst, nw_dst);
-        if (null == deviceAttachment) {
-        	logger.debug("Can't find the switch!!!---------------------");
-        	return Command.CONTINUE;
-        	// TODO: Handle case where device is not known
-        }
-        
-        if(sw.getId() != deviceAttachment.getSwitchDPID()){
-        	// send this packet along unchanged
-        	ArrayList<OFAction> action = new ArrayList<OFAction>();
-        	OFActionOutput outputPort = new OFActionOutput((short)deviceAttachment.getPort());
-        	action.add(outputPort);
-        	pushPacket(sw, pi, action, (short)OFActionOutput.MINIMUM_LENGTH);
-        	
-        	// let another module process this packet as well
-        	return Command.CONTINUE;
-        }
-		
+		// is this packet from h1:80 going to h7:80?
 		if(Arrays.equals(match.getDataLayerSource(), Ethernet.toMACAddress("00:00:00:00:00:01")) &&
 				Arrays.equals(match.getDataLayerDestination(), Ethernet.toMACAddress("00:00:00:00:00:07")) &&
 				match.getNetworkProtocol() == IPv4.PROTOCOL_TCP  &&
 				match.getTransportDestination() == (short)80){
+				
+			// Find switch that H8 is connected to
+	        long dl_dst = Ethernet.toLong(Ethernet.toMACAddress("00:00:00:00:00:08"));
+	        int nw_dst = IPv4.toIPv4Address("10.0.0.8");
 			
+	        // Find switch and port to which destination device is connected
+	        SwitchPort deviceAttachment = findDeviceAttachment(dl_dst, nw_dst);
+	        if (null == deviceAttachment) {
+	        	logger.debug("Can't find the switch!!!---------------------");
+	        	return Command.CONTINUE;
+	        	// TODO: Handle case where device is not known
+	        }
+	        
+	        // Is this the switch H8 is connected to?
+	        if(sw.getId() != deviceAttachment.getSwitchDPID()){
+	        	// Not the switch, allow packet to be forwarded as normal
+	        	return Command.CONTINUE;
+	        }
+		
+	        // This is the switch H8 is connected to
+	        // Remap the packet and install flow rules
 			remapH7toH8(sw, pi, (short)deviceAttachment.getPort());
 			return Command.STOP;
 		}
@@ -461,7 +458,7 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 	@Override
 	public void addedSwitch(IOFSwitch sw) {
 		//logger.debug("------------------NEW SWITCH ADDED, IN SUBVERT---------------");
-		puntToController(sw);
+		//puntToController(sw);
 		
 	}
 
