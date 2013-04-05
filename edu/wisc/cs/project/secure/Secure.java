@@ -68,7 +68,9 @@ public class Secure {
 				}
 			}
 			
-			// actions aren't the same so need to compare the rules
+			// TODO actions aren't the same so need to compare the rules
+			
+			// TODO time for some real work!
 			
 		}
 		
@@ -76,7 +78,7 @@ public class Secure {
 	}
 	
 	/**
-	 * Check to see if the actions for the two rules are equal
+	 * Check to see if the lists of actions for the two rules are equal
 	 * 
 	 * @param rule
 	 * @param sw
@@ -122,6 +124,14 @@ public class Secure {
 		// Everything checks out to be the same
 		return true;
 	}
+	
+	/**
+	 * Takes two actions and compares them to see if they are equal or not
+	 * 
+	 * @param cAction - candidate action
+	 * @param fAction - action already in the flow table
+	 * @return - true or false depending on if the actions are equal
+	 */
 	
 	private static boolean checkInnerAction(OFAction cAction, OFAction fAction){
 		
