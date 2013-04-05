@@ -80,9 +80,9 @@ public class Secure {
 	/**
 	 * Check to see if the lists of actions for the two rules are equal
 	 * 
-	 * @param rule
-	 * @param sw
-	 * @return
+	 * @param cAction - list of candidate actions
+	 * @param fActions - list of actions from rule already in the flow table
+	 * @return true or false depending on if the lists are equal to each other
 	 */
 	
 	private static boolean checkActions(List<OFAction> cActions, List<OFAction> fActions){
