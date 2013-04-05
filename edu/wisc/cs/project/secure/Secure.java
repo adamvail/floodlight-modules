@@ -35,17 +35,17 @@ public class Secure {
 	 * This function is used in OFSwitchBase to check rules in the
 	 * write functions to make sure the switch should get the rule
 	 * 
-	 * @param rule - the rule to be written to the switch
+	 * @param cRule - the rule to be written to the switch
 	 * @param sw - the switch that is trying to write the rule, this way
 	 * 				a view of the switch's current rules can be constructed
 	 * @return - true or false, if the rule is allowed to be written or not
 	 */
 	
-	public static boolean checkFlowRule(OFFlowMod rule, IOFSwitch sw){
+	public static boolean checkFlowRule(OFFlowMod cRule, IOFSwitch sw){
 		// If there are no rules in the flow table, add this one
 		if(aliasSet.get(sw.getId()) == null){
 			HashSet<Alias> aliases = new HashSet<Alias>();
-			aliases.add(new Alias(rule));
+			aliases.add(new Alias(cRule));
 			aliasSet.put(sw.getId(), aliases);
 			return true;
 		}
@@ -55,9 +55,9 @@ public class Secure {
 			// pairwise comparison of current flow table rules
 			// with the candidate rule
 			
-			if(checkActions(rule.getActions(), alias.getActions()) == true){
+			if(checkActions(cRule.getActions(), alias.getActions()) == true){
 				// Actions are the same so add the rule alias to the set
-				if(aliasSet.get(sw.getId()).add(new Alias(rule)) == true){
+				if(aliasSet.get(sw.getId()).add(new Alias(cRule)) == true){
 					return true;
 				}
 				else{
@@ -68,9 +68,18 @@ public class Secure {
 				}
 			}
 			
-			// TODO actions aren't the same so need to compare the rules
+			// TODO check the matches, if they are equal then disallow the rule
+			// to be written. This actually might just get handled below
+						
+			Alias cAlias = new Alias(cRule);
 			
-			// TODO time for some real work!
+			// fRule is wider
+			// if fRule has wildcarded field, then automatically add it to the union
+			
+			// fRule is narrower
+			
+			// if field is wildcarded then automatically add it to the union
+			
 			
 		}
 		
@@ -88,6 +97,19 @@ public class Secure {
 	private static boolean checkActions(List<OFAction> cActions, List<OFAction> fActions){
 		
 		ArrayList<OFAction> currentFlowActions = new ArrayList<OFAction>(fActions);
+		
+		/*
+		// Check to see if the rules are both forward or both drop
+		boolean cRuleForward = actionsContainOutput(cActions);
+		boolean fRuleForward = actionsContainOutput(fActions);
+		
+		if(cRuleForward == fRuleForward){
+			// they have the same effect, so allow rule to be written to switch
+						
+			return true;
+		}
+		*/
+		
 		// If they aren't the same size they can't be the same action as a whole
 		if(cActions.size() != fActions.size()){
 			return false;
@@ -123,6 +145,15 @@ public class Secure {
 	
 		// Everything checks out to be the same
 		return true;
+	}
+	
+	private static boolean actionsContainOutput(List<OFAction> actions){
+		for(OFAction action : actions){
+			if(action instanceof OFActionOutput){
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	/**
