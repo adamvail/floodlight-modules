@@ -15,7 +15,7 @@ public class Secure {
 	
 	protected static Logger logger = LoggerFactory.getLogger(Secure.class);
 	
-	private HashMap<Long, HashSet<Alias>> aliasSet = new HashMap<Long, HashSet<Alias>>();
+	private static HashMap<Long, HashSet<Alias>> aliasSet = new HashMap<Long, HashSet<Alias>>();
 	
 	/**
 	 * This function is used in OFSwitchBase to check rules in the
@@ -27,24 +27,50 @@ public class Secure {
 	 */
 	
 	public static boolean checkFlowRule(OFFlowMod rule, IOFSwitch sw){
+		// If there are no rules in the flow table, add this one
+		if(aliasSet.get(sw.getId()) == null){
+			HashSet<Alias> aliases = new HashSet<Alias>();
+			aliases.add(new Alias(rule));
+			aliasSet.put(sw.getId(), aliases);
+			return true;
+		}
 		
-		Alias alias = null;
-		
-		//logger.debug("------------Secure just received a rule!---------------");
-		List<OFAction> actions = rule.getActions();
-		
-		for(OFAction action : actions){
-			logger.debug("Switch " + sw.getId() + ": " + action.toString());
+		HashSet<Alias> aliases = aliasSet.get(sw.getId());
+		for(Alias alias : aliases){
+			// pairwise comparison of current flow table rules
+			// with the candidate rule
+			
+			if(checkActions(rule.getActions(), alias.getActions()) == true){
+				// Actions are the same so add the rule alias to the set
+				if(aliasSet.get(sw.getId()).add(new Alias(rule)) == true){
+					return true;
+				}
+				else{
+					return true;
+				}
+			}
 			
 		}
 		
-		return addAlias(sw, alias);
+		return true;
 	}
-
-	// function for adding a alias to the set, checks to see if there are conflicts
-	// in the set already
-	// this is the brains of the set conflict checking
-	private static boolean addAlias(IOFSwitch sw, Alias alias){
+	
+	/**
+	 * Check to see if the actions are equal
+	 * 
+	 * @param rule
+	 * @param sw
+	 * @return
+	 */
+	
+	private static boolean checkActions(List<OFAction> cActions, List<OFAction> fActions){
+		
+		// If they aren't the same size they can't be the same action as a whole
+		if(cActions.size() != fActions.size()){
+			return false;
+		}
+		
+				
 		
 		return true;
 	}

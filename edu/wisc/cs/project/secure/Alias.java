@@ -1,11 +1,23 @@
 package edu.wisc.cs.project.secure;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import net.floodlightcontroller.packet.Ethernet;
 
 import org.openflow.protocol.OFFlowMod;
 import org.openflow.protocol.OFMatch;
 import org.openflow.protocol.action.OFAction;
+import org.openflow.protocol.action.OFActionDataLayerDestination;
+import org.openflow.protocol.action.OFActionDataLayerSource;
+import org.openflow.protocol.action.OFActionNetworkLayerDestination;
+import org.openflow.protocol.action.OFActionNetworkLayerSource;
+import org.openflow.protocol.action.OFActionNetworkTypeOfService;
+import org.openflow.protocol.action.OFActionTransportLayerDestination;
+import org.openflow.protocol.action.OFActionTransportLayerSource;
 import org.openflow.protocol.action.OFActionType;
 
 public class Alias {
@@ -14,54 +26,173 @@ public class Alias {
 	// destination alias set
 	// action
 	
-	private OFMatch source = new OFMatch();
-	private OFMatch destination = new OFMatch();
+	// Have arraylists for every field in the
+	// OFMatch that. That we it'll be easier to
+	// add actions to them and tell if they have
+	// been wildcarded
 	
-	// not sure if this is enough, will have to get a bit further to tell
-	private ArrayList<OFAction> actions = null; 
+	private ArrayList<Short> inputPort = new ArrayList<Short>();
+	private ArrayList<byte[]> dataLayerSource = new ArrayList<byte[]>();
+	private ArrayList<byte[]> dataLayerDestination = new ArrayList<byte[]>();
+	private ArrayList<Short> dataLayerVirtualLan = new ArrayList<Short>();
+	private ArrayList<Byte> dataLayerVirtualLanPriorityCodePoint = new ArrayList<Byte>();
+	private ArrayList<Short> dataLayerType = new ArrayList<Short>();
+	private ArrayList<Byte> networkTypeOfService = new ArrayList<Byte>();
+	private ArrayList<Byte> networkProtocol = new ArrayList<Byte>();
+	private ArrayList<Integer> networkSource = new ArrayList<Integer>();
+	private ArrayList<Integer> networkDestination = new ArrayList<Integer>();
+	private ArrayList<Short> transportSource = new ArrayList<Short>();
+	private ArrayList<Short> transportDestination = new ArrayList<Short>();
+	
+	private ArrayList<OFAction> actions = null;
 	
 	public Alias(OFFlowMod rule){
-		// need to check for failures adding to the set
-		actions = new ArrayList<OFAction>(rule.getActions());
-		separateSourceAndDestination(rule);
+		// need to check for failures adding to the set	
+		this.actions = new ArrayList<OFAction>(rule.getActions());
+		loadFromMatch(rule.getMatch());
+		loadActions(rule.getActions());
 	}
 	/**
-	 * Function to rip out all the source and destination information from the 
-	 * original OFMatch and put them in separate OFMatch objects
+	 * If the value for the different match fields are not their default values of 0,
+	 * then add them to the List structure since they are in use
+	 * @param match
 	 */
 	
-	private void separateSourceAndDestination(OFFlowMod rule){
-		OFMatch orig = rule.getMatch();
-		// pull out all source fields in orig OFMatch
-		
-		
-		// pull out all destination fields in orig OFMatch
-		
-		addRemapActions(rule);
+	private void loadFromMatch(OFMatch match){
+		byte[] zero = new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+		if(match.getInputPort() != 0) this.inputPort.add(match.getInputPort());
+		if(!Arrays.equals(match.getDataLayerSource(), zero)) this.dataLayerSource.add(match.getDataLayerSource());
+		if(!Arrays.equals(match.getDataLayerDestination(), zero)) this.dataLayerDestination.add(match.getDataLayerDestination());
+		if(match.getDataLayerVirtualLan() != Ethernet.VLAN_UNTAGGED) this.dataLayerVirtualLan.add(match.getDataLayerVirtualLan());
+		if(match.getDataLayerVirtualLanPriorityCodePoint() != 0) this.dataLayerVirtualLanPriorityCodePoint.add(match.getDataLayerVirtualLanPriorityCodePoint());
+		if(match.getDataLayerType() != 0) this.dataLayerType.add(match.getDataLayerType());
+		if(match.getNetworkTypeOfService() != 0) this.networkTypeOfService.add(match.getNetworkTypeOfService());
+		if(match.getNetworkProtocol() != 0) this.networkProtocol.add(match.getNetworkProtocol());
+		if(match.getNetworkSource() != 0) this.networkSource.add(match.getNetworkSource());
+		if(match.getNetworkDestination() != 0) this.networkDestination.add(match.getNetworkDestination());
+		if(match.getTransportSource() != 0) this.transportSource.add(match.getTransportSource());
+		if(match.getTransportDestination() != 0) this.transportDestination.add(match.getTransportDestination());
 	}
 	
 	/**
-	 * Function to go through the actions and if there are remaps, then
-	 * those need to be added to the source or destination sets (depending
-	 * on the remap)
-	 * @return
+	 * Populates the source and destination sets with the results of relevant actions.
+	 * Doesn't take all actions into account, mainly since I don't know how they would
+	 * change the source and destination "bins". This should cover the general cases though.
+	 * 
+	 * @param actions
 	 */
 	
-	private void addRemapActions(OFFlowMod rule){
-		
+	private void loadActions(List<OFAction> actions){
+		for(OFAction action : actions){
+			OFActionType type = action.getType();
+			switch (type){
+				case OUTPUT:
+					break;
+				case SET_VLAN_ID:
+					break;
+				case SET_VLAN_PCP:
+					break;
+				case STRIP_VLAN:
+					break;
+				case SET_DL_SRC:
+					this.dataLayerSource.add(((OFActionDataLayerSource)action).getDataLayerAddress());
+					break;
+				case SET_DL_DST:
+					this.dataLayerDestination.add(((OFActionDataLayerDestination)action).getDataLayerAddress());
+					break;
+				case SET_NW_SRC:
+					this.networkSource.add(((OFActionNetworkLayerSource)action).getNetworkAddress());
+					break;
+				case SET_NW_DST:
+					this.networkDestination.add(((OFActionNetworkLayerDestination)action).getNetworkAddress());
+					break;
+				case SET_NW_TOS:
+					this.networkTypeOfService.add(((OFActionNetworkTypeOfService)action).getNetworkTypeOfService());
+					break;
+				case SET_TP_SRC:
+					this.transportSource.add(((OFActionTransportLayerSource)action).getTransportPort());
+					break;
+				case SET_TP_DST:
+					this.transportDestination.add(((OFActionTransportLayerDestination)action).getTransportPort());
+					break;
+				case OPAQUE_ENQUEUE:
+					break;
+				case VENDOR:
+					break;
+			}
+		}
 	}
 	
 	/* --------- GETTERS --------- */
 	
-	public OFMatch getSource(){
-		return this.source;
-	}
-	
-	public OFMatch getDestination(){
-		return this.destination;
+	public HashSet<ArrayList> getAllAttributes(){
+		HashSet<ArrayList> attr = new HashSet<ArrayList>();
+		attr.add(inputPort);
+		attr.add(dataLayerSource);
+		attr.add(dataLayerDestination);
+		attr.add(dataLayerType);
+		attr.add(dataLayerVirtualLan);
+		attr.add(dataLayerVirtualLanPriorityCodePoint);
+		attr.add(networkSource);
+		attr.add(networkDestination);
+		attr.add(networkProtocol);
+		attr.add(networkTypeOfService);
+		attr.add(transportSource);
+		attr.add(transportDestination);
+		attr.add(actions);
+		
+		return attr;
 	}
 	
 	public ArrayList<OFAction> getActions(){
-		return this.actions;
+		return actions;
+	}
+	
+	public ArrayList<Short> getInputPort(){
+		return inputPort;
+	}
+	
+	public ArrayList<byte[]> getDataLayerSource(){
+		return dataLayerSource;
+	}
+	
+	public ArrayList<byte[]> getDataLayerDestination(){
+		return dataLayerDestination;
+	}
+	
+	public ArrayList<Short> getDataLayerType(){
+		return dataLayerType;
+	}
+	
+	public ArrayList<Short> getDataLayerVirtualLan(){
+		return dataLayerVirtualLan;
+	}
+	
+	public ArrayList<Byte> getDataLayerVirtualLanPriorityCodePoint(){
+		return dataLayerVirtualLanPriorityCodePoint;
+	}
+	
+	public ArrayList<Integer> getNetworkSource(){
+		return networkSource;
+	}
+	
+	public ArrayList<Integer> getNetworkDestination(){
+		return networkDestination;
+	}
+	
+	public ArrayList<Byte> getNetworkProtocol(){
+		return networkProtocol;
+	}
+	
+	public ArrayList<Byte> getNetworkTypeOfService(){
+		return networkTypeOfService;
+	}
+	
+	public ArrayList<Short> getTransportSource(){
+		return transportSource;
+	}
+	
+	public ArrayList<Short> getTransportDestination(){
+		return transportDestination;
 	}
 }
