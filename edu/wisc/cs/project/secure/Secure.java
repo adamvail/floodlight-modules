@@ -1,5 +1,7 @@
 package edu.wisc.cs.project.secure;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -8,6 +10,18 @@ import net.floodlightcontroller.core.IOFSwitch;
 
 import org.openflow.protocol.OFFlowMod;
 import org.openflow.protocol.action.OFAction;
+import org.openflow.protocol.action.OFActionDataLayerDestination;
+import org.openflow.protocol.action.OFActionDataLayerSource;
+import org.openflow.protocol.action.OFActionEnqueue;
+import org.openflow.protocol.action.OFActionNetworkLayerDestination;
+import org.openflow.protocol.action.OFActionNetworkLayerSource;
+import org.openflow.protocol.action.OFActionNetworkTypeOfService;
+import org.openflow.protocol.action.OFActionOutput;
+import org.openflow.protocol.action.OFActionTransportLayerDestination;
+import org.openflow.protocol.action.OFActionTransportLayerSource;
+import org.openflow.protocol.action.OFActionVendor;
+import org.openflow.protocol.action.OFActionVirtualLanIdentifier;
+import org.openflow.protocol.action.OFActionVirtualLanPriorityCodePoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +34,7 @@ public class Secure {
 	/**
 	 * This function is used in OFSwitchBase to check rules in the
 	 * write functions to make sure the switch should get the rule
+	 * 
 	 * @param rule - the rule to be written to the switch
 	 * @param sw - the switch that is trying to write the rule, this way
 	 * 				a view of the switch's current rules can be constructed
@@ -46,9 +61,14 @@ public class Secure {
 					return true;
 				}
 				else{
-					return true;
+					// alias wasn't able to be added to the set
+					// this means it is already in the flow table
+					// so don't bother writing it out to the switch again
+					return false;
 				}
 			}
+			
+			// actions aren't the same so need to compare the rules
 			
 		}
 		
@@ -56,7 +76,7 @@ public class Secure {
 	}
 	
 	/**
-	 * Check to see if the actions are equal
+	 * Check to see if the actions for the two rules are equal
 	 * 
 	 * @param rule
 	 * @param sw
@@ -65,13 +85,154 @@ public class Secure {
 	
 	private static boolean checkActions(List<OFAction> cActions, List<OFAction> fActions){
 		
+		ArrayList<OFAction> currentFlowActions = new ArrayList<OFAction>(fActions);
 		// If they aren't the same size they can't be the same action as a whole
 		if(cActions.size() != fActions.size()){
 			return false;
 		}
 		
-				
+		// check types and actions for each
+		for(OFAction cAction : cActions){
+			boolean foundSameType = false;
+			for(int i = 0; i < currentFlowActions.size(); i++){
+				if(cAction.getType() == currentFlowActions.get(i).getType()){
+					foundSameType = true;
+					// continue checking inside since they have the same type
+					if(checkInnerAction(cAction, currentFlowActions.get(i))){
+						// then the inner actions are the same
+						// get rid of the action in the current rule set
+						currentFlowActions.remove(i);
+						break;
+					}
+					else {
+						// the inner actions are not the same
+						// therefore need to check the whole rule
+						return false;
+					}
+				}
+			}
+			if(!foundSameType){
+				// There were no fActions found that have the same
+				// OFActionType as cAction, therefore these actions are
+				// not the same, short-circuit the search
+				return false;
+			}
+		}
+	
+		// Everything checks out to be the same
+		return true;
+	}
+	
+	private static boolean checkInnerAction(OFAction cAction, OFAction fAction){
 		
+		// Just a sanity check, these should be the same by the time they
+		// get here
+		if(cAction.getType() != fAction.getType()){
+			return false;
+		}
+		
+		switch(cAction.getType()){
+			case OUTPUT:
+				if(((OFActionOutput)cAction).getPort() == ((OFActionOutput)fAction).getPort()){
+					return true;
+				}
+				else {
+					return false;
+				}
+			case SET_VLAN_ID:
+				if(((OFActionVirtualLanIdentifier)cAction).getVirtualLanIdentifier() == 
+						((OFActionVirtualLanIdentifier)fAction).getVirtualLanIdentifier()){
+					return true;
+				}
+				else {
+					return false;
+				}
+			case SET_VLAN_PCP:
+				if(((OFActionVirtualLanPriorityCodePoint)cAction).getVirtualLanPriorityCodePoint() == 
+						((OFActionVirtualLanPriorityCodePoint)fAction).getVirtualLanPriorityCodePoint()) {
+					return true;
+				}
+				else {
+					return false;
+				}
+			case STRIP_VLAN:
+				// TODO Not sure how to handle this action
+				return true;
+			case SET_DL_SRC:				
+				if(Arrays.equals(((OFActionDataLayerSource)cAction).getDataLayerAddress(),
+						((OFActionDataLayerSource)fAction).getDataLayerAddress())){
+					return true;
+				}
+				else {
+					return false;
+				}
+			case SET_DL_DST:		
+				if(Arrays.equals(((OFActionDataLayerDestination)cAction).getDataLayerAddress(),
+						((OFActionDataLayerDestination)fAction).getDataLayerAddress())){
+					return true;
+				}
+				else {
+					return false;
+				}
+			case SET_NW_SRC:
+				if(((OFActionNetworkLayerSource)cAction).getNetworkAddress() == 
+						((OFActionNetworkLayerSource)fAction).getNetworkAddress()){
+					return true;
+				}
+				else {
+					return false;
+				}
+			case SET_NW_DST:
+				if(((OFActionNetworkLayerDestination)cAction).getNetworkAddress() == 
+						((OFActionNetworkLayerDestination)fAction).getNetworkAddress()){
+					return true;
+				}
+				else {
+					return false;
+				}
+			case SET_NW_TOS:
+				if(((OFActionNetworkTypeOfService)cAction).getNetworkTypeOfService() == 
+						((OFActionNetworkTypeOfService)fAction).getNetworkTypeOfService()){
+					return true;
+				}
+				else {
+					return false;
+				}
+			case SET_TP_SRC:
+				if(((OFActionTransportLayerSource)cAction).getTransportPort() == 
+						((OFActionTransportLayerSource)fAction).getTransportPort()){
+					return true;
+				}
+				else {
+					return false;
+				}
+			case SET_TP_DST:
+				if(((OFActionTransportLayerDestination)cAction).getTransportPort() == 
+						((OFActionTransportLayerDestination)fAction).getTransportPort()){
+					return true;
+				}
+				else {
+					return false;
+				}
+			case OPAQUE_ENQUEUE:
+				if(((OFActionEnqueue)cAction).getPort() == ((OFActionEnqueue)fAction).getPort() &&
+						((OFActionEnqueue)cAction).getQueueId() == ((OFActionEnqueue)fAction).getQueueId()){
+					return true;
+				}
+				else {
+					return false;
+				}
+			case VENDOR:
+				if(((OFActionVendor)cAction).getVendor() == ((OFActionVendor)fAction).getVendor()){
+					return true;
+				}
+				else {
+					return false;
+				}
+		}
+		
+		// This acts as a default
+		// At the moment, if we don't know what it is, then allow it
 		return true;
 	}
 	
