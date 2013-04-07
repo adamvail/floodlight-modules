@@ -51,11 +51,11 @@ public class Secure {
 		}
 		
 		HashSet<Alias> aliases = aliasSet.get(sw.getId());
-		for(Alias alias : aliases){
+		for(Alias fAlias : aliases){
 			// pairwise comparison of current flow table rules
 			// with the candidate rule
 			
-			if(checkActions(cRule.getActions(), alias.getActions()) == true){
+			if(checkActions(cRule.getActions(), fAlias.getActions()) == true){
 				// Actions are the same so add the rule alias to the set
 				if(aliasSet.get(sw.getId()).add(new Alias(cRule)) == true){
 					return true;
@@ -73,16 +73,175 @@ public class Secure {
 						
 			Alias cAlias = new Alias(cRule);
 			
-			// fRule is wider
-			// if fRule has wildcarded field, then automatically add it to the union
+			boolean sourceUnionEmpty = checkAliasSources(cAlias, fAlias);
+			boolean destinationUnionEmpty = checkAliasDestinations(cAlias, fAlias);
 			
-			// fRule is narrower
-			
-			// if field is wildcarded then automatically add it to the union
-			
-			
+			if(sourceUnionEmpty || destinationUnionEmpty){
+				// either the sources or destinations has an empty set
+				// So allow the rule to be written to the switch
+				
+				logger.debug("-------RULE ALLOWED--------");
+				return true;
+			}
+			else {
+				// there were no empty sets, so there is a conflict
+				// Don't allow the rule to be written to the switch
+				logger.debug("-------RULE REJECTED--------");
+				return false;
+			}
 		}
 		
+		// should never get to this point since the check is done for an empty
+		// flow table at the switch in the beginning of the function
+		
+		logger.debug("-----IN CHECKRULE, SHOULDN'T BE HERE!!!!!!-------");
+		return true;
+	}
+		
+	private static int checkDataLayer(ArrayList<byte[]> cDL, ArrayList<byte[]> fDL){
+		
+		if(cDL.size() != 0 || fDL.size() != 0){
+			// Then at least one of the them has their dl_src set, look for intersection
+			
+			if(cDL.size() == 0 || fDL.size() == 0){
+				return 0;
+			}
+			
+			// Neither are wildcarded so go through and find if there is intersection
+			
+			for(byte[] c : cDL){
+				for(byte[] f : fDL){
+					if(Arrays.equals(c, f)){
+						return 0;
+					}
+				}
+			}
+		}			
+		
+		return 1;
+	}
+	
+	private static int checkNetworkLayer(ArrayList<Integer> cNW, ArrayList<Integer> fNW){
+		
+		if(cNW.size() != 0 || fNW.size() != 0){
+			if(cNW.size() == 0 || fNW.size() == 0){
+				return 0;
+			}
+			
+			for(int c : cNW){
+				for(int f : fNW){
+					if(c == f){
+						return 0;
+					}
+				}
+			}
+		}
+		
+		return 1;
+	}
+	
+	private static int checkTransport(ArrayList<Short> cTP, ArrayList<Short> fTP){
+		
+		if(cTP.size() != 0 || fTP.size() != 0){
+			if(cTP.size() == 0 || fTP.size() == 0){
+				return 0;
+			}
+			
+			for(short c : cTP){
+				for(short f : fTP){
+					if(c == f){
+						return 0;
+					}
+				}
+			}
+		}
+		
+		return 1;
+	}
+	
+	private static boolean checkAliasSources(Alias cAlias, Alias fAlias){
+		int dlSrcEmpty = -1;
+		int nwSrcEmpty = -1;
+		int tpSrcEmpty = -1;
+		
+		if(!(cAlias.getDataLayerSource().size() == 0 && fAlias.getDataLayerSource().size() == 0)){
+			dlSrcEmpty = checkDataLayer(cAlias.getDataLayerSource(), fAlias.getDataLayerSource());
+		}
+		if(!(cAlias.getNetworkSource().size() == 0 && fAlias.getNetworkSource().size() == 0)){
+			nwSrcEmpty = checkNetworkLayer(cAlias.getNetworkSource(), fAlias.getNetworkSource());
+		}
+		if(!(cAlias.getTransportSource().size() == 0 && fAlias.getTransportSource().size() == 0)){
+			tpSrcEmpty = checkTransport(cAlias.getTransportSource(), fAlias.getTransportSource());
+		}
+		
+		if(dlSrcEmpty > -1 && nwSrcEmpty > -1 && tpSrcEmpty > -1){
+			return (dlSrcEmpty + nwSrcEmpty + tpSrcEmpty) > 0;
+		}
+		else if(dlSrcEmpty > -1 && nwSrcEmpty > -1 && tpSrcEmpty == -1){
+			return (dlSrcEmpty + nwSrcEmpty) > 0;
+		}
+		else if(dlSrcEmpty > -1 && nwSrcEmpty == -1 && tpSrcEmpty > -1){
+			return (dlSrcEmpty + tpSrcEmpty) > 0;
+		}
+		else if(dlSrcEmpty > -1 && nwSrcEmpty == -1 && tpSrcEmpty == -1){
+			return (dlSrcEmpty) > 0;
+		}
+		else if(dlSrcEmpty == -1 && nwSrcEmpty > -1 && tpSrcEmpty > -1){
+			return (nwSrcEmpty + tpSrcEmpty) > 0;
+		}
+		else if(dlSrcEmpty == -1 && nwSrcEmpty > -1 && tpSrcEmpty == -1){
+			return (nwSrcEmpty) > 0;
+		}
+		else if(dlSrcEmpty == -1 && nwSrcEmpty == -1 && tpSrcEmpty > -1){
+			return (tpSrcEmpty) > 0;
+		}
+		else if(dlSrcEmpty == -1 && nwSrcEmpty == -1 && tpSrcEmpty == -1){
+			return true;
+		}
+		return true;
+	}
+	
+	
+	
+	private static boolean checkAliasDestinations(Alias cAlias, Alias fAlias){
+		int dlDstEmpty = -1;
+		int nwDstEmpty = -1;
+		int tpDstEmpty = -1;
+		
+		if(!(cAlias.getDataLayerDestination().size() == 0 && fAlias.getDataLayerDestination().size() == 0)){
+			dlDstEmpty = checkDataLayer(cAlias.getDataLayerDestination(), fAlias.getDataLayerDestination());
+		}
+		if(!(cAlias.getNetworkDestination().size() == 0 && fAlias.getNetworkDestination().size() == 0)){
+			nwDstEmpty = checkNetworkLayer(cAlias.getNetworkDestination(), fAlias.getNetworkDestination());
+		}
+		if(!(cAlias.getTransportDestination().size() == 0 && fAlias.getTransportDestination().size() == 0)){
+			tpDstEmpty = checkTransport(cAlias.getTransportDestination(), fAlias.getTransportDestination());
+		}
+				
+		if(dlDstEmpty > -1 && nwDstEmpty > -1 && tpDstEmpty > -1){
+			return (dlDstEmpty + nwDstEmpty + tpDstEmpty) > 0;
+		}
+		else if(dlDstEmpty > -1 && nwDstEmpty > -1 && tpDstEmpty == -1){
+			return (dlDstEmpty + nwDstEmpty) > 0;
+		}
+		else if(dlDstEmpty > -1 && nwDstEmpty == -1 && tpDstEmpty > -1){
+			return (dlDstEmpty + tpDstEmpty) > 0;
+		}
+		else if(dlDstEmpty > -1 && nwDstEmpty == -1 && tpDstEmpty == -1){
+			return (dlDstEmpty) > 0;
+		}
+		else if(dlDstEmpty == -1 && nwDstEmpty > -1 && tpDstEmpty > -1){
+			return (nwDstEmpty + tpDstEmpty) > 0;
+		}
+		else if(dlDstEmpty == -1 && nwDstEmpty > -1 && tpDstEmpty == -1){
+			return (nwDstEmpty) > 0;
+		}
+		else if(dlDstEmpty == -1 && nwDstEmpty == -1 && tpDstEmpty > -1){
+			return (tpDstEmpty) > 0;
+		}
+		else if(dlDstEmpty == -1 && nwDstEmpty == -1 && tpDstEmpty == -1){
+			return true;
+		}
 		return true;
 	}
 	
