@@ -79,7 +79,7 @@ public class Secure {
 				boolean sourceUnionEmpty = checkAliasSources(cAlias, fAlias);
 				boolean destinationUnionEmpty = checkAliasDestinations(cAlias, fAlias);
 				
-				if(!sourceUnionEmpty && !destinationUnionEmpty){			
+				if(!sourceUnionEmpty && !destinationUnionEmpty){				
 					// there were no empty sets, so there is a conflict
 					// Don't allow the rule to be written to the switch
 					
