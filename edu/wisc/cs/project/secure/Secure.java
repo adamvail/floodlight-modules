@@ -44,12 +44,14 @@ public class Secure {
 	public static boolean checkFlowRule(OFFlowMod cRule, IOFSwitch sw){
 		// If there are no rules in the flow table, add this one
 		if(aliasSet.get(sw.getId()) == null){
+			logger.debug("------NO RULES IN FLOW TABLE, ALLOW------");
 			HashSet<Alias> aliases = new HashSet<Alias>();
 			aliases.add(new Alias(cRule));
 			aliasSet.put(sw.getId(), aliases);
 			return true;
 		}
 		
+		// STOP returning, need to go over the whole pairwise set, only return if it is false
 		HashSet<Alias> aliases = aliasSet.get(sw.getId());
 		for(Alias fAlias : aliases){
 			// pairwise comparison of current flow table rules
@@ -58,7 +60,8 @@ public class Secure {
 			if(checkActions(cRule.getActions(), fAlias.getActions()) == true){
 				// Actions are the same so add the rule alias to the set
 				if(aliasSet.get(sw.getId()).add(new Alias(cRule)) == true){
-					return true;
+					logger.debug("-----RULES HAVE THE SAME ACTION----");
+					//return true;
 				}
 				else{
 					// alias wasn't able to be added to the set
@@ -67,34 +70,28 @@ public class Secure {
 					return false;
 				}
 			}
-			
-			// TODO check the matches, if they are equal then disallow the rule
-			// to be written. This actually might just get handled below
-						
-			Alias cAlias = new Alias(cRule);
-			
-			boolean sourceUnionEmpty = checkAliasSources(cAlias, fAlias);
-			boolean destinationUnionEmpty = checkAliasDestinations(cAlias, fAlias);
-			
-			if(sourceUnionEmpty || destinationUnionEmpty){
-				// either the sources or destinations has an empty set
-				// So allow the rule to be written to the switch
+			else{
+				// TODO check the matches, if they are equal then disallow the rule
+				// to be written. This actually might just get handled below
+							
+				Alias cAlias = new Alias(cRule);
 				
-				logger.debug("-------RULE ALLOWED--------");
-				return true;
-			}
-			else {
-				// there were no empty sets, so there is a conflict
-				// Don't allow the rule to be written to the switch
-				logger.debug("-------RULE REJECTED--------");
-				return false;
+				boolean sourceUnionEmpty = checkAliasSources(cAlias, fAlias);
+				boolean destinationUnionEmpty = checkAliasDestinations(cAlias, fAlias);
+				
+				if(!sourceUnionEmpty && !destinationUnionEmpty){			
+					// there were no empty sets, so there is a conflict
+					// Don't allow the rule to be written to the switch
+					
+					logger.debug("-------RULE REJECTED--------");
+					return false;
+				}
 			}
 		}
 		
-		// should never get to this point since the check is done for an empty
-		// flow table at the switch in the beginning of the function
+		// No flow table conflicts, allow rule to be written
 		
-		logger.debug("-----IN CHECKRULE, SHOULDN'T BE HERE!!!!!!-------");
+		logger.debug("-----NO CONFLICTS, ALLOW RULE-------");
 		return true;
 	}
 		
