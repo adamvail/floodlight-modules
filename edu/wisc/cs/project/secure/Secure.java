@@ -6,9 +6,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import net.floodlightcontroller.core.IOFSwitch;
-
 import org.openflow.protocol.OFFlowMod;
+import org.openflow.protocol.OFPacketOut;
 import org.openflow.protocol.action.OFAction;
 import org.openflow.protocol.action.OFActionDataLayerDestination;
 import org.openflow.protocol.action.OFActionDataLayerSource;
@@ -51,7 +50,8 @@ public class Secure {
 			return true;
 		}
 		
-		// STOP returning, need to go over the whole pairwise set, only return if it is false
+		Alias cAlias = new Alias(cRule);
+
 		HashSet<Alias> aliases = aliasSet.get(dpid);
 		for(Alias fAlias : aliases){
 			// pairwise comparison of current flow table rules
@@ -60,8 +60,7 @@ public class Secure {
 			if(checkActions(cRule.getActions(), fAlias.getActions()) == true){
 				// Actions are the same so add the rule alias to the set
 				if(aliasSet.get(dpid).add(new Alias(cRule)) == true){
-					logger.debug("-----RULES HAVE THE SAME ACTION----");
-					//return true;
+					//logger.debug("-----RULES HAVE THE SAME ACTION----");
 				}
 				else{
 					// alias wasn't able to be added to the set
@@ -71,11 +70,7 @@ public class Secure {
 				}
 			}
 			else{
-				// TODO check the matches, if they are equal then disallow the rule
-				// to be written. This actually might just get handled below
-							
-				Alias cAlias = new Alias(cRule);
-				
+											
 				boolean sourceUnionEmpty = checkAliasSources(cAlias, fAlias);
 				boolean destinationUnionEmpty = checkAliasDestinations(cAlias, fAlias);
 				
@@ -85,6 +80,7 @@ public class Secure {
 					// Don't allow the rule to be written to the switch
 					
 					logger.debug("-------RULE REJECTED--------");
+					logger.debug("Refused rule = " + cRule);
 					return false;
 				}
 			}
@@ -93,6 +89,48 @@ public class Secure {
 		// No flow table conflicts, allow rule to be written
 		
 		logger.debug("-----NO CONFLICTS, ALLOW RULE-------");
+		return true;
+	}
+	
+	public static boolean checkPacketOut(OFPacketOut po, long dpid){
+
+		HashSet<Alias> aliases = aliasSet.get(dpid);
+		if(aliases == null){
+			// If there is nothing in the flow table, allow the packet to be written
+			return true;
+		}
+		
+		Alias cPO = new Alias(po);
+		
+		// make sure the po doesn't violate any of the current
+		// rules in the flow table
+		for(Alias fAlias : aliases){
+			if(checkActions(po.getActions(), fAlias.getActions()) == false){
+				
+				// If the actions are not the same need to check the packet
+				boolean sourceUnionEmpty = checkAliasSources(cPO, fAlias);
+				boolean destinationUnionEmpty = checkAliasDestinations(cPO, fAlias); // returning true for some reason
+				
+				if(po.getPacketData() == null && !sourceUnionEmpty && !destinationUnionEmpty){
+					// TCP handshakes don't have and packet data, since packet data
+					// is what floodlight uses to figure out the DL type and the NW Proto
+					// then we can't consider them when deciding to refuse the packet for
+					// a handshake.
+					logger.debug("-------PACKET OUT REJECTED-------");
+					logger.debug("Refused packet = " + po);
+					return false;
+				}
+				else if(checkDataLayerType(cPO, fAlias) && checkNetworkProtocol(cPO, fAlias) &&
+						!sourceUnionEmpty && !destinationUnionEmpty){
+					logger.debug("-------PACKET OUT REJECTED-------");
+					logger.debug("Refused packet = " + po);
+					return false;
+				}
+								
+			}
+		}
+		
+		logger.debug("------------NO CONFLICTS, ALLOW PACKET OUT-------");
 		return true;
 	}
 	
@@ -335,7 +373,7 @@ public class Secure {
 		// Everything checks out to be the same
 		return true;
 	}
-	
+/*	
 	private static boolean actionsContainOutput(List<OFAction> actions){
 		for(OFAction action : actions){
 			if(action instanceof OFActionOutput){
@@ -344,7 +382,7 @@ public class Secure {
 		}
 		return false;
 	}
-	
+*/	
 	/**
 	 * Takes two actions and compares them to see if they are equal or not
 	 * 

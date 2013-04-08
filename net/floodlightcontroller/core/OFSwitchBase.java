@@ -52,6 +52,7 @@ import org.openflow.protocol.OFFeaturesReply;
 import org.openflow.protocol.OFFlowMod;
 import org.openflow.protocol.OFMatch;
 import org.openflow.protocol.OFMessage;
+import org.openflow.protocol.OFPacketOut;
 import org.openflow.protocol.OFPhysicalPort;
 import org.openflow.protocol.OFPhysicalPort.OFPortConfig;
 import org.openflow.protocol.OFPhysicalPort.OFPortState;
@@ -198,6 +199,9 @@ public abstract class OFSwitchBase implements IOFSwitch {
 			// priority app's rules
 			return;
     		
+    	}
+    	else if(m.getType() == OFType.PACKET_OUT && !Secure.checkPacketOut((OFPacketOut)m, this.getId())) {
+    		return;
     	}
     	
         Map<IOFSwitch,List<OFMessage>> msg_buffer_map = local_msg_buffer.get();

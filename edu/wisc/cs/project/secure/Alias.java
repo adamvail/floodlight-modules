@@ -2,13 +2,13 @@ package edu.wisc.cs.project.secure;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 
 import net.floodlightcontroller.packet.Ethernet;
 
 import org.openflow.protocol.OFFlowMod;
 import org.openflow.protocol.OFMatch;
+import org.openflow.protocol.OFPacketOut;
 import org.openflow.protocol.action.OFAction;
 import org.openflow.protocol.action.OFActionDataLayerDestination;
 import org.openflow.protocol.action.OFActionDataLayerSource;
@@ -18,8 +18,12 @@ import org.openflow.protocol.action.OFActionNetworkTypeOfService;
 import org.openflow.protocol.action.OFActionTransportLayerDestination;
 import org.openflow.protocol.action.OFActionTransportLayerSource;
 import org.openflow.protocol.action.OFActionType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Alias {
+	
+	protected static Logger logger = LoggerFactory.getLogger(Alias.class);
 
 	// source alias set
 	// destination alias set
@@ -57,6 +61,27 @@ public class Alias {
 		loadFromMatch(rule.getMatch());
 		loadActions(rule.getActions());
 	}
+	
+	public Alias(OFPacketOut po){
+		
+		if(po.getActions() != null){
+			this.actions = new ArrayList<OFAction>(po.getActions());
+		}
+				
+		OFMatch match = new OFMatch();
+		if(po.getPacketData() != null){
+			match.loadFromPacket(po.getPacketData(), po.getInPort());
+			loadFromMatch(match);
+		}
+		
+		loadActions(po.getActions());
+	}
+	
+	private void loadFromPacket(OFPacketOut po){
+		this.inputPort = po.getInPort();
+		
+	}
+	
 	/**
 	 * If the value for the different match fields are not their default values of 0,
 	 * then add them to the List structure since they are in use
