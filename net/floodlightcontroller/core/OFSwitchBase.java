@@ -189,18 +189,17 @@ public abstract class OFSwitchBase implements IOFSwitch {
             throws IOException {
     	// Interpose here to build the view of current rules
     	// on the switch
-    	/*
-    	if(m.getType() == OFType.FLOW_MOD){
-    		if(!Secure.checkFlowRule((OFFlowMod)m, this)){
-    			// throw an exception or something
-    			// Don't allow the rule to be written to the switch
-    			// TODO have some sort of priority attached to who is writing
-    			// the rule, since they should be able to overwrite a lesser
-    			// priority app's rules
-    			return;
-    		}
+    	
+    	if(m.getType() == OFType.FLOW_MOD && !Secure.checkFlowRule((OFFlowMod)m, this.getId())){
+			// throw an exception or something
+			// Don't allow the rule to be written to the switch
+			// TODO have some sort of priority attached to who is writing
+			// the rule, since they should be able to overwrite a lesser
+			// priority app's rules
+			return;
+    		
     	}
-    	*/
+    	
         Map<IOFSwitch,List<OFMessage>> msg_buffer_map = local_msg_buffer.get();
         List<OFMessage> msg_buffer = msg_buffer_map.get(this);
         if (msg_buffer == null) {

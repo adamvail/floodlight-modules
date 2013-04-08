@@ -30,24 +30,30 @@ public class Alias {
 	// add actions to them and tell if they have
 	// been wildcarded
 	
-	private ArrayList<Short> inputPort = new ArrayList<Short>();
+	//private ArrayList<Short> inputPort = new ArrayList<Short>();
 	private ArrayList<byte[]> dataLayerSource = new ArrayList<byte[]>();
 	private ArrayList<byte[]> dataLayerDestination = new ArrayList<byte[]>();
 	private ArrayList<Short> dataLayerVirtualLan = new ArrayList<Short>();
 	private ArrayList<Byte> dataLayerVirtualLanPriorityCodePoint = new ArrayList<Byte>();
-	private ArrayList<Short> dataLayerType = new ArrayList<Short>();
+	//private ArrayList<Short> dataLayerType = new ArrayList<Short>();
 	private ArrayList<Byte> networkTypeOfService = new ArrayList<Byte>();
-	private ArrayList<Byte> networkProtocol = new ArrayList<Byte>();
+	//private ArrayList<Byte> networkProtocol = new ArrayList<Byte>();
 	private ArrayList<Integer> networkSource = new ArrayList<Integer>();
 	private ArrayList<Integer> networkDestination = new ArrayList<Integer>();
 	private ArrayList<Short> transportSource = new ArrayList<Short>();
 	private ArrayList<Short> transportDestination = new ArrayList<Short>();
 	
+	private short inputPort = -1;
+	private short dataLayerType = -1;
+	private byte networkProtocol = -1;
+	
 	private ArrayList<OFAction> actions = null;
 	
 	public Alias(OFFlowMod rule){
 		// need to check for failures adding to the set	
-		this.actions = new ArrayList<OFAction>(rule.getActions());
+		if(rule.getActions() != null){
+			this.actions = new ArrayList<OFAction>(rule.getActions());
+		}
 		loadFromMatch(rule.getMatch());
 		loadActions(rule.getActions());
 	}
@@ -59,14 +65,14 @@ public class Alias {
 	
 	private void loadFromMatch(OFMatch match){
 		byte[] zero = new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-		if(match.getInputPort() != 0) this.inputPort.add(match.getInputPort());
+		if(match.getInputPort() != 0) this.inputPort = match.getInputPort();
 		if(!Arrays.equals(match.getDataLayerSource(), zero)) this.dataLayerSource.add(match.getDataLayerSource());
 		if(!Arrays.equals(match.getDataLayerDestination(), zero)) this.dataLayerDestination.add(match.getDataLayerDestination());
 		if(match.getDataLayerVirtualLan() != Ethernet.VLAN_UNTAGGED) this.dataLayerVirtualLan.add(match.getDataLayerVirtualLan());
 		if(match.getDataLayerVirtualLanPriorityCodePoint() != 0) this.dataLayerVirtualLanPriorityCodePoint.add(match.getDataLayerVirtualLanPriorityCodePoint());
-		if(match.getDataLayerType() != 0) this.dataLayerType.add(match.getDataLayerType());
+		if(match.getDataLayerType() != 0) this.dataLayerType = match.getDataLayerType();
 		if(match.getNetworkTypeOfService() != 0) this.networkTypeOfService.add(match.getNetworkTypeOfService());
-		if(match.getNetworkProtocol() != 0) this.networkProtocol.add(match.getNetworkProtocol());
+		if(match.getNetworkProtocol() != 0) this.networkProtocol = match.getNetworkProtocol();
 		if(match.getNetworkSource() != 0) this.networkSource.add(match.getNetworkSource());
 		if(match.getNetworkDestination() != 0) this.networkDestination.add(match.getNetworkDestination());
 		if(match.getTransportSource() != 0) this.transportSource.add(match.getTransportSource());
@@ -82,6 +88,9 @@ public class Alias {
 	 */
 	
 	private void loadActions(List<OFAction> actions){
+		if(actions == null){
+			return;
+		}
 		for(OFAction action : actions){
 			OFActionType type = action.getType();
 			switch (type){
@@ -123,7 +132,7 @@ public class Alias {
 	}
 	
 	/* --------- GETTERS --------- */
-	
+/*	
 	public HashSet<ArrayList> getAllAttributes(){
 		HashSet<ArrayList> attr = new HashSet<ArrayList>();
 		attr.add(inputPort);
@@ -142,12 +151,12 @@ public class Alias {
 		
 		return attr;
 	}
-	
+*/	
 	public ArrayList<OFAction> getActions(){
 		return actions;
 	}
 	
-	public ArrayList<Short> getInputPort(){
+	public short getInputPort(){
 		return inputPort;
 	}
 	
@@ -159,7 +168,7 @@ public class Alias {
 		return dataLayerDestination;
 	}
 	
-	public ArrayList<Short> getDataLayerType(){
+	public short getDataLayerType(){
 		return dataLayerType;
 	}
 	
@@ -179,7 +188,7 @@ public class Alias {
 		return networkDestination;
 	}
 	
-	public ArrayList<Byte> getNetworkProtocol(){
+	public byte getNetworkProtocol(){
 		return networkProtocol;
 	}
 	

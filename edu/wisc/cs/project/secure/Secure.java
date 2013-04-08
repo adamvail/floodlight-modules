@@ -41,25 +41,25 @@ public class Secure {
 	 * @return - true or false, if the rule is allowed to be written or not
 	 */
 	
-	public static boolean checkFlowRule(OFFlowMod cRule, IOFSwitch sw){
+	public static boolean checkFlowRule(OFFlowMod cRule, long dpid){
 		// If there are no rules in the flow table, add this one
-		if(aliasSet.get(sw.getId()) == null){
+		if(aliasSet.get(dpid) == null){
 			logger.debug("------NO RULES IN FLOW TABLE, ALLOW------");
 			HashSet<Alias> aliases = new HashSet<Alias>();
 			aliases.add(new Alias(cRule));
-			aliasSet.put(sw.getId(), aliases);
+			aliasSet.put(dpid, aliases);
 			return true;
 		}
 		
 		// STOP returning, need to go over the whole pairwise set, only return if it is false
-		HashSet<Alias> aliases = aliasSet.get(sw.getId());
+		HashSet<Alias> aliases = aliasSet.get(dpid);
 		for(Alias fAlias : aliases){
 			// pairwise comparison of current flow table rules
 			// with the candidate rule
 			
 			if(checkActions(cRule.getActions(), fAlias.getActions()) == true){
 				// Actions are the same so add the rule alias to the set
-				if(aliasSet.get(sw.getId()).add(new Alias(cRule)) == true){
+				if(aliasSet.get(dpid).add(new Alias(cRule)) == true){
 					logger.debug("-----RULES HAVE THE SAME ACTION----");
 					//return true;
 				}
@@ -79,7 +79,8 @@ public class Secure {
 				boolean sourceUnionEmpty = checkAliasSources(cAlias, fAlias);
 				boolean destinationUnionEmpty = checkAliasDestinations(cAlias, fAlias);
 				
-				if(!sourceUnionEmpty && !destinationUnionEmpty){				
+				if(checkDataLayerType(cAlias, fAlias) && checkNetworkProtocol(cAlias, fAlias) &&
+						!sourceUnionEmpty && !destinationUnionEmpty){				
 					// there were no empty sets, so there is a conflict
 					// Don't allow the rule to be written to the switch
 					
@@ -93,6 +94,28 @@ public class Secure {
 		
 		logger.debug("-----NO CONFLICTS, ALLOW RULE-------");
 		return true;
+	}
+	
+	private static boolean checkDataLayerType(Alias cAlias, Alias fAlias){
+		// These could potentially not be set, but that's ok, since that
+		// means they are both wildcarded
+		if(cAlias.getDataLayerType() == fAlias.getDataLayerType()){
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	
+	private static boolean checkNetworkProtocol(Alias cAlias, Alias fAlias){
+		// These could potentially not be set, but that's ok, since that
+		// means they are both wildcarded
+		if(cAlias.getNetworkProtocol() == fAlias.getNetworkProtocol()){
+			return true;
+		}
+		else{
+			return false;
+		}
 	}
 		
 	private static int checkDataLayer(ArrayList<byte[]> cDL, ArrayList<byte[]> fDL){
@@ -251,6 +274,16 @@ public class Secure {
 	 */
 	
 	private static boolean checkActions(List<OFAction> cActions, List<OFAction> fActions){
+		
+		if(cActions == null && fActions == null){
+			// both are null, so both are drops, allow
+			return true;
+		}
+		else if(cActions == null || fActions == null){
+			// since both aren't null and we got here, one must be
+			// null and the other isn't. Therefore different actions
+			return false;
+		}
 		
 		ArrayList<OFAction> currentFlowActions = new ArrayList<OFAction>(fActions);
 		

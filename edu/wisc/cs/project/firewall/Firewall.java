@@ -258,6 +258,7 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
     	sw.write(rule, null);
     	sw.flush();
     }catch(Exception e){
+    	e.printStackTrace();
     	logger.error("Could not send drop packet rule in Firewall to switch");
     }    
   }
