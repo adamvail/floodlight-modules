@@ -49,6 +49,7 @@ public class Secure {
 			aliasSet.put(dpid, aliases);
 			return true;
 		}
+		checkRuleHardTimeouts(dpid);
 		
 		Alias cAlias = new Alias(cRule);
 
@@ -100,6 +101,8 @@ public class Secure {
 			return true;
 		}
 		
+		checkRuleHardTimeouts(dpid);
+		
 		Alias cPO = new Alias(po);
 		
 		// make sure the po doesn't violate any of the current
@@ -132,6 +135,21 @@ public class Secure {
 		
 		logger.debug("------------NO CONFLICTS, ALLOW PACKET OUT-------");
 		return true;
+	}
+	
+	private static void checkRuleHardTimeouts(long dpid){
+		HashSet<Alias> aliases = aliasSet.get(dpid);
+		if(aliases == null){
+			// nothing in the set
+			return;
+		}
+		
+		for(Alias alias : aliases){
+			long curTime = System.currentTimeMillis() / 1000;
+			if(alias.getHardTimeout() > 0 && (alias.getStartTime() + alias.getHardTimeout()) > curTime){
+				aliases.remove(alias);
+			}
+		}
 	}
 	
 	private static boolean checkDataLayerType(Alias cAlias, Alias fAlias){

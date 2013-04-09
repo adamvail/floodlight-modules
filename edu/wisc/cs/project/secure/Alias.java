@@ -51,6 +51,10 @@ public class Alias {
 	private short dataLayerType = -1;
 	private byte networkProtocol = -1;
 	
+	//private short idleTimeout = 0;
+	private short hardTimeout = 0;
+	private long startTime = 0;
+	
 	private ArrayList<OFAction> actions = null;
 	
 	public Alias(OFFlowMod rule){
@@ -60,6 +64,8 @@ public class Alias {
 		}
 		loadFromMatch(rule.getMatch());
 		loadActions(rule.getActions());
+		startTime = System.currentTimeMillis() / 1000;
+		hardTimeout = rule.getHardTimeout();
 	}
 	
 	public Alias(OFPacketOut po){
@@ -227,5 +233,13 @@ public class Alias {
 	
 	public ArrayList<Short> getTransportDestination(){
 		return transportDestination;
+	}
+	
+	public long getStartTime(){
+		return startTime;
+	}
+	
+	public short getHardTimeout(){
+		return hardTimeout;
 	}
 }
