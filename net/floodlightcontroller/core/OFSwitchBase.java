@@ -50,6 +50,7 @@ import org.codehaus.jackson.map.ser.ToStringSerializer;
 import org.jboss.netty.channel.Channel;
 import org.openflow.protocol.OFFeaturesReply;
 import org.openflow.protocol.OFFlowMod;
+import org.openflow.protocol.OFFlowRemoved;
 import org.openflow.protocol.OFMatch;
 import org.openflow.protocol.OFMessage;
 import org.openflow.protocol.OFPacketOut;
@@ -57,6 +58,7 @@ import org.openflow.protocol.OFPhysicalPort;
 import org.openflow.protocol.OFPhysicalPort.OFPortConfig;
 import org.openflow.protocol.OFPhysicalPort.OFPortState;
 import org.openflow.protocol.OFPort;
+import org.openflow.protocol.OFStatisticsReply;
 import org.openflow.protocol.OFStatisticsRequest;
 import org.openflow.protocol.OFType;
 import org.openflow.protocol.statistics.OFStatistics;
@@ -88,6 +90,8 @@ public abstract class OFSwitchBase implements IOFSwitch {
     protected long datapathId;
     protected Role role;
     protected String stringId;
+    
+    private Secure secure;
 
     /**
      * Members hidden from subclasses
@@ -145,6 +149,7 @@ public abstract class OFSwitchBase implements IOFSwitch {
         this.setAttribute(PROP_FASTWILDCARDS, OFMatch.OFPFW_ALL);
         this.setAttribute(PROP_SUPPORTS_OFPP_FLOOD, new Boolean(true));
         this.setAttribute(PROP_SUPPORTS_OFPP_TABLE, new Boolean(true));
+        secure = Secure.getInstance();
     }
     
     
@@ -191,7 +196,7 @@ public abstract class OFSwitchBase implements IOFSwitch {
     	// Interpose here to build the view of current rules
     	// on the switch
     	
-    	if(m.getType() == OFType.FLOW_MOD && !Secure.checkFlowRule((OFFlowMod)m, this.getId())){
+    	if(m.getType() == OFType.FLOW_MOD && !secure.checkFlowRule((OFFlowMod)m, this.getId(), this)){
 			// throw an exception or something
 			// Don't allow the rule to be written to the switch
 			// TODO have some sort of priority attached to who is writing
@@ -200,8 +205,11 @@ public abstract class OFSwitchBase implements IOFSwitch {
 			return;
     		
     	}
-    	else if(m.getType() == OFType.PACKET_OUT && !Secure.checkPacketOut((OFPacketOut)m, this.getId())) {
+    	else if(m.getType() == OFType.PACKET_OUT && !secure.checkPacketOut((OFPacketOut)m, this.getId())) {
     		return;
+    	}
+    	else if(m.getType() == OFType.FLOW_REMOVED){
+    		secure.removeFlowRule((OFFlowRemoved)m, this.getId());
     	}
     	
         Map<IOFSwitch,List<OFMessage>> msg_buffer_map = local_msg_buffer.get();
@@ -231,7 +239,7 @@ public abstract class OFSwitchBase implements IOFSwitch {
     public void write(List<OFMessage> msglist, 
                       FloodlightContext bc) throws IOException {
         for (OFMessage m : msglist) {
-        	if(m.getType() == OFType.FLOW_MOD && !Secure.checkFlowRule((OFFlowMod)m, this.getId())){
+        	if(m.getType() == OFType.FLOW_MOD && !secure.checkFlowRule((OFFlowMod)m, this.getId(), this)){
     			// throw an exception or something
     			// Don't allow the rule to be written to the switch
     			// TODO have some sort of priority attached to who is writing
@@ -240,8 +248,11 @@ public abstract class OFSwitchBase implements IOFSwitch {
     			break;
         		
         	}
-        	else if(m.getType() == OFType.PACKET_OUT && !Secure.checkPacketOut((OFPacketOut)m, this.getId())) {
+        	else if(m.getType() == OFType.PACKET_OUT && !secure.checkPacketOut((OFPacketOut)m, this.getId())) {
         		break;
+        	}
+        	else if(m.getType() == OFType.STATS_REPLY){
+        		secure.checkIdleTimeouts((OFStatisticsReply)m, this.getId());
         	}
             if (role == Role.SLAVE) {
                 switch (m.getType()) {

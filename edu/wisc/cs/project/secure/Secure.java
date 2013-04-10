@@ -1,13 +1,19 @@
 package edu.wisc.cs.project.secure;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import net.floodlightcontroller.core.OFSwitchBase;
+
 import org.openflow.protocol.OFFlowMod;
+import org.openflow.protocol.OFFlowRemoved;
 import org.openflow.protocol.OFPacketOut;
+import org.openflow.protocol.OFStatisticsReply;
+import org.openflow.protocol.OFStatisticsRequest;
 import org.openflow.protocol.action.OFAction;
 import org.openflow.protocol.action.OFActionDataLayerDestination;
 import org.openflow.protocol.action.OFActionDataLayerSource;
@@ -21,6 +27,9 @@ import org.openflow.protocol.action.OFActionTransportLayerSource;
 import org.openflow.protocol.action.OFActionVendor;
 import org.openflow.protocol.action.OFActionVirtualLanIdentifier;
 import org.openflow.protocol.action.OFActionVirtualLanPriorityCodePoint;
+import org.openflow.protocol.statistics.OFStatistics;
+import org.openflow.protocol.statistics.OFStatisticsType;
+import org.openflow.protocol.statistics.OFTableStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +37,8 @@ public class Secure {
 	
 	protected static Logger logger = LoggerFactory.getLogger(Secure.class);
 	
-	private static HashMap<Long, HashSet<Alias>> aliasSet = new HashMap<Long, HashSet<Alias>>();
+	private static Secure instance = null;
+	private HashMap<Long, HashSet<Alias>> aliasSet = new HashMap<Long, HashSet<Alias>>();
 	
 	/**
 	 * This function is used in OFSwitchBase to check rules in the
@@ -40,20 +50,36 @@ public class Secure {
 	 * @return - true or false, if the rule is allowed to be written or not
 	 */
 	
-	public static boolean checkFlowRule(OFFlowMod cRule, long dpid){
+	public static Secure getInstance(){
+		if(instance == null){
+			instance = new Secure();
+		}
+		return instance;
+	}
+	
+	protected Secure(){
+		
+	}
+	
+	public boolean checkFlowRule(OFFlowMod cRule, long dpid, OFSwitchBase sw){
+	//	sendStatsRequest(sw);
+		
+	//	checkRuleHardTimeouts(dpid);
+		HashSet<Alias> aliases = aliasSet.get(dpid);
+		
 		// If there are no rules in the flow table, add this one
-		if(aliasSet.get(dpid) == null){
-			logger.debug("------NO RULES IN FLOW TABLE, ALLOW------");
-			HashSet<Alias> aliases = new HashSet<Alias>();
-			aliases.add(new Alias(cRule));
-			aliasSet.put(dpid, aliases);
+		if(aliases == null){
+//			logger.debug("------NO RULES IN FLOW TABLE, ALLOW------");
+			HashSet<Alias> alias = new HashSet<Alias>();
+			alias.add(new Alias(cRule));
+			putAliasSet(dpid, alias);
+			//aliasSet.put(dpid, aliases); // use the concurrent method instead
 			return true;
 		}
-		checkRuleHardTimeouts(dpid);
-		
+				
 		Alias cAlias = new Alias(cRule);
 
-		HashSet<Alias> aliases = aliasSet.get(dpid);
+		
 		for(Alias fAlias : aliases){
 			// pairwise comparison of current flow table rules
 			// with the candidate rule
@@ -93,16 +119,16 @@ public class Secure {
 		return true;
 	}
 	
-	public static boolean checkPacketOut(OFPacketOut po, long dpid){
+	public boolean checkPacketOut(OFPacketOut po, long dpid){
 
-		HashSet<Alias> aliases = aliasSet.get(dpid);
+	//	checkRuleHardTimeouts(dpid);
+		
+		HashSet<Alias> aliases = getAliasSet(dpid);
 		if(aliases == null){
 			// If there is nothing in the flow table, allow the packet to be written
 			return true;
 		}
-		
-		checkRuleHardTimeouts(dpid);
-		
+			
 		Alias cPO = new Alias(po);
 		
 		// make sure the po doesn't violate any of the current
@@ -137,7 +163,43 @@ public class Secure {
 		return true;
 	}
 	
-	private static void checkRuleHardTimeouts(long dpid){
+	/**
+	 * Function to access the HashMap of all the aliases. Effectively puts a lock around
+	 * the alias HashMap.
+	 * 
+	 * @param dpid - switch data path identifier
+	 * @param write - boolean saying if you want to write to the HashMap
+	 * @param alias - alias to write to the hashmap
+	 * @return - if write is false, then just read the HashSet from for the switch
+	 */
+	private synchronized HashSet<Alias> accessAliasSet(long dpid, boolean write, HashSet<Alias> alias){
+		if(write){
+			aliasSet.put(dpid, alias);
+			return null;
+		}
+		else{
+			return aliasSet.get(dpid);
+		}
+	}
+	
+	private HashSet<Alias> getAliasSet(long dpid){
+		return accessAliasSet(dpid, false, null);
+	}
+	
+	private synchronized void putAliasSet(long dpid, HashSet<Alias> alias){
+		accessAliasSet(dpid, true, alias);
+	}
+	
+	public void removeFlowRule(OFFlowRemoved flowRemoved, long dpid){
+		logger.debug("\n\nFLow Removed: \n"  + flowRemoved);
+		//HashSet<Alias> aliases;
+	}
+	
+	public void checkIdleTimeouts(OFStatisticsReply sr, long dpid){
+		logger.debug(sr.toString());
+	}
+	
+	private void checkRuleHardTimeouts(long dpid){
 		HashSet<Alias> aliases = aliasSet.get(dpid);
 		if(aliases == null){
 			// nothing in the set
@@ -152,7 +214,7 @@ public class Secure {
 		}
 	}
 	
-	private static boolean checkDataLayerType(Alias cAlias, Alias fAlias){
+	private boolean checkDataLayerType(Alias cAlias, Alias fAlias){
 		// These could potentially not be set, but that's ok, since that
 		// means they are both wildcarded
 		if(cAlias.getDataLayerType() == fAlias.getDataLayerType()){
@@ -163,7 +225,7 @@ public class Secure {
 		}
 	}
 	
-	private static boolean checkNetworkProtocol(Alias cAlias, Alias fAlias){
+	private boolean checkNetworkProtocol(Alias cAlias, Alias fAlias){
 		// These could potentially not be set, but that's ok, since that
 		// means they are both wildcarded
 		if(cAlias.getNetworkProtocol() == fAlias.getNetworkProtocol()){
@@ -174,7 +236,7 @@ public class Secure {
 		}
 	}
 		
-	private static int checkDataLayer(ArrayList<byte[]> cDL, ArrayList<byte[]> fDL){
+	private int checkDataLayer(ArrayList<byte[]> cDL, ArrayList<byte[]> fDL){
 		
 		if(cDL.size() != 0 || fDL.size() != 0){
 			// Then at least one of the them has their dl_src set, look for intersection
@@ -197,7 +259,7 @@ public class Secure {
 		return 1;
 	}
 	
-	private static int checkNetworkLayer(ArrayList<Integer> cNW, ArrayList<Integer> fNW){
+	private int checkNetworkLayer(ArrayList<Integer> cNW, ArrayList<Integer> fNW){
 		
 		if(cNW.size() != 0 || fNW.size() != 0){
 			if(cNW.size() == 0 || fNW.size() == 0){
@@ -216,7 +278,7 @@ public class Secure {
 		return 1;
 	}
 	
-	private static int checkTransport(ArrayList<Short> cTP, ArrayList<Short> fTP){
+	private int checkTransport(ArrayList<Short> cTP, ArrayList<Short> fTP){
 		
 		if(cTP.size() != 0 || fTP.size() != 0){
 			if(cTP.size() == 0 || fTP.size() == 0){
@@ -235,7 +297,7 @@ public class Secure {
 		return 1;
 	}
 	
-	private static boolean checkAliasSources(Alias cAlias, Alias fAlias){
+	private boolean checkAliasSources(Alias cAlias, Alias fAlias){
 		int dlSrcEmpty = -1;
 		int nwSrcEmpty = -1;
 		int tpSrcEmpty = -1;
@@ -279,7 +341,7 @@ public class Secure {
 	
 	
 	
-	private static boolean checkAliasDestinations(Alias cAlias, Alias fAlias){
+	private boolean checkAliasDestinations(Alias cAlias, Alias fAlias){
 		int dlDstEmpty = -1;
 		int nwDstEmpty = -1;
 		int tpDstEmpty = -1;
@@ -329,7 +391,7 @@ public class Secure {
 	 * @return true or false depending on if the lists are equal to each other
 	 */
 	
-	private static boolean checkActions(List<OFAction> cActions, List<OFAction> fActions){
+	private boolean checkActions(List<OFAction> cActions, List<OFAction> fActions){
 		
 		if(cActions == null && fActions == null){
 			// both are null, so both are drops, allow
@@ -409,7 +471,7 @@ public class Secure {
 	 * @return - true or false depending on if the actions are equal
 	 */
 	
-	private static boolean checkInnerAction(OFAction cAction, OFAction fAction){
+	private boolean checkInnerAction(OFAction cAction, OFAction fAction){
 		
 		// Just a sanity check, these should be the same by the time they
 		// get here
