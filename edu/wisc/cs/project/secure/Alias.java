@@ -96,11 +96,6 @@ public class Alias {
 		loadActions(po.getActions());
 	}
 	
-	private void loadFromPacket(OFPacketOut po){
-		this.inputPort = po.getInPort();
-		
-	}
-	
 	/**
 	 * If the value for the different match fields are not their default values of 0,
 	 * then add them to the List structure since they are in use

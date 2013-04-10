@@ -1,27 +1,8 @@
 package edu.wisc.cs.project.firewall;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
-
-import org.openflow.protocol.OFFlowMod;
-import org.openflow.protocol.OFMatch;
-import org.openflow.protocol.OFMessage;
-import org.openflow.protocol.OFPacketIn;
-import org.openflow.protocol.OFPacketOut;
-import org.openflow.protocol.OFPort;
-import org.openflow.protocol.OFType;
-import org.openflow.protocol.Wildcards;
-import org.openflow.protocol.action.OFAction;
-import org.openflow.protocol.action.OFActionOutput;
-import org.openflow.protocol.action.OFActionTransportLayerDestination;
-import org.openflow.protocol.action.OFActionTransportLayerSource;
-import org.openflow.util.U16;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import net.floodlightcontroller.core.FloodlightContext;
 import net.floodlightcontroller.core.IFloodlightProviderService;
@@ -32,9 +13,15 @@ import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
 import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
-import net.floodlightcontroller.packet.Ethernet;
 import net.floodlightcontroller.packet.IPv4;
-import net.floodlightcontroller.packet.TCP;
+
+import org.openflow.protocol.OFFlowMod;
+import org.openflow.protocol.OFMatch;
+import org.openflow.protocol.OFMessage;
+import org.openflow.protocol.OFPacketOut;
+import org.openflow.protocol.OFType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitchListener {
 
@@ -129,6 +116,7 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
   /**
    * Sends a packet out to the switch
    */
+  /*
   private void pushPacket(IOFSwitch sw, OFPacketIn pi, 
       ArrayList<OFAction> actions, short actionsLength) {
     
@@ -164,52 +152,7 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
             logger.error("failed to write packetOut: ", e);
         }
   }
-  
-  private void sendPacket(OFPacketIn pi, ArrayList<OFAction> actions, FloodlightContext cntx, IOFSwitch sw){
-        OFPacketOut po = (OFPacketOut) floodlightProvider.getOFMessageFactory().getMessage(OFType.PACKET_OUT);
-        po.setBufferId(pi.getBufferId());
-        po.setInPort(pi.getInPort());
-    
-        po.setActions(actions);
-  
-        if(actions.size() == 1){
-          po.setActionsLength((short)OFActionOutput.MINIMUM_LENGTH);
-        }
-        else if(actions.size() == 2){
-          po.setActionsLength(((short)(OFActionOutput.MINIMUM_LENGTH + OFActionTransportLayerDestination.MINIMUM_LENGTH)));
-          //logger.info("Sending packet from port 80 destined for 443!");
-        }
-        else if(actions.size() == 3){
-          po.setActionsLength(((short)(OFActionOutput.MINIMUM_LENGTH + OFActionTransportLayerDestination.MINIMUM_LENGTH + OFActionTransportLayerSource.MINIMUM_LENGTH)));  
-        }
-        else{
-          logger.info("MORE THAN 2 ACTIONS IN ARRAY....WTF?");
-          for(OFAction act : actions){
-            act.toString();
-          }        
-        }
-        //po.setActionsLength((short)actionsLength);
-        
-        if (pi.getBufferId() == 0xffffffff) {
-            byte[] packetData = pi.getPacketData();
-            po.setLength(U16.t(OFPacketOut.MINIMUM_LENGTH +
-                     po.getActionsLength() + packetData.length));
-            po.setPacketData(packetData);
-        } else {
-            po.setLength(U16.t(OFPacketOut.MINIMUM_LENGTH +
-                     po.getActionsLength()));
-        }
-        
-        try {
-            sw.write(po, cntx);
-            sw.flush();
-        } catch (IOException e) {
-            logger.error("Failure writing PacketOut", e);
-        }
-        
-        actions.clear();
-        //logger.info("DONE WRITING");
-  }
+  */
   
   @Override
   public void addedSwitch(IOFSwitch sw) {

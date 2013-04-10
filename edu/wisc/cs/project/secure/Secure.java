@@ -10,7 +10,6 @@ import net.floodlightcontroller.core.OFSwitchBase;
 
 import org.openflow.protocol.OFFlowMod;
 import org.openflow.protocol.OFFlowRemoved;
-import org.openflow.protocol.OFMatch;
 import org.openflow.protocol.OFPacketOut;
 import org.openflow.protocol.action.OFAction;
 import org.openflow.protocol.action.OFActionDataLayerDestination;
@@ -207,21 +206,6 @@ public class Secure {
 			}
 		}
 		logger.debug("Alias set size after: " + getAliasSet(dpid).size());
-	}
-	
-	private void checkRuleHardTimeouts(long dpid){
-		HashSet<Alias> aliases = aliasSet.get(dpid);
-		if(aliases == null){
-			// nothing in the set
-			return;
-		}
-		
-		for(Alias alias : aliases){
-			long curTime = System.currentTimeMillis() / 1000;
-			if(alias.getHardTimeout() > 0 && (alias.getStartTime() + alias.getHardTimeout()) > curTime){
-				aliases.remove(alias);
-			}
-		}
 	}
 	
 	private boolean checkDataLayerType(Alias cAlias, Alias fAlias){
