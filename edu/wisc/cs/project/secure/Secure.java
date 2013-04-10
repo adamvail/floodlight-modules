@@ -180,26 +180,33 @@ public class Secure {
 	}
 	
 	public void removeFlowRule(OFFlowRemoved flowRemoved, long dpid){
-		logger.debug("\nFlow Removed: ");
 		logger.debug("Reason: " + flowRemoved.getReason());
-		OFMatch match = flowRemoved.getMatch();
-		logger.debug("Match: " + match);
-		logger.debug("\n");
 		Alias remove = new Alias(flowRemoved.getMatch());
 		
 		HashSet<Alias> aliases = getAliasSet(dpid);
+		logger.debug("Alias set size: " + aliases.size());
 		if(aliases != null){ // this shouldn't ever be null, we have a big issue if it is
+			Alias toDelete = null;
+			int count = 0;
 			for(Alias alias : aliases){
-				
-				// If found the correct rule, delete it from the set
-				// and then break
-				logger.debug("Equality check: " + alias.equals(remove));
+				// Look for the flow rule in the set that corresponds to the removal
+				// notification
+				//logger.debug("Equality check: " + alias.equals(remove));
+				if(alias.equals(remove)){
+					toDelete = alias;
+					count++;
+				}
+			}
+			if(count > 1){
+				logger.debug("\n\n\n FOUND MORE THAN ONE ALIAS TO REMOVE ON FLOW REMOVAL\n\n");
+				return;
+			}
+			else if(count == 1){
+				aliases.remove(toDelete);
+				putAliasSet(dpid, aliases);
 			}
 		}
-		else {
-			logger.debug("---------Alias set is null!!!!------");
-			return;
-		}
+		logger.debug("Alias set size after: " + getAliasSet(dpid).size());
 	}
 	
 	private void checkRuleHardTimeouts(long dpid){

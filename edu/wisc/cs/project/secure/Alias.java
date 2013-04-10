@@ -243,46 +243,97 @@ public class Alias {
 			logger.debug("Input ports of aliases are different");
 			return false;
 		}
-		else if(/*(alias.getDataLayerType() == -1 && this.dataLayerType != -1) || */
+		else if(alias.getDataLayerType() != -1  && 
 				alias.getDataLayerType() != this.dataLayerType){
 			// DataLayer type is not the same
 			logger.debug("DL Type of aliases are different");
+			logger.debug("fAlias: " + this.dataLayerType);
+			logger.debug("cAlias: " + alias.getDataLayerType());
 			return false;
 		}
-		else if(/*(alias.getNetworkProtocol() == -1 && this.networkProtocol != -1) || */
-				alias.getNetworkProtocol() != this.networkProtocol){
+		else if(alias.getNetworkProtocol() != -1 && alias.getNetworkProtocol() != this.networkProtocol){
 			logger.debug("Network Protocol of aliases are different");
+			logger.debug("fAlias: " + this.networkProtocol);
+			logger.debug("cAlias: " + alias.getNetworkProtocol());
 			return false;
 		}
-		else if(alias.getDataLayerDestination().size() > 0 && 
-				!this.dataLayerDestination.contains(alias.getDataLayerDestination().get(0))){
-			logger.debug("DL Destination of aliases are different");
-			return false;
+		else if(alias.getDataLayerDestination().size() > 0){
+			boolean found = false;
+			for(byte[] dst : this.dataLayerDestination){
+				if(Arrays.equals(dst, alias.getDataLayerDestination().get(0))){
+					found = true;
+					break;
+				}
+			}
+			if(!found){
+				logger.debug("DL Destination of aliases are different");
+				return false;
+			}			
 		}
-		else if(alias.getDataLayerSource().size() > 0 &&
-				!this.dataLayerSource.contains(alias.getDataLayerSource().get(0))){
-			logger.debug("DL Source of aliases are different");
-			return false;
+		else if(alias.getDataLayerSource().size() > 0){
+			boolean found = false;
+			for(byte[] src : this.dataLayerSource){
+				if(Arrays.equals(src, alias.getDataLayerSource().get(0))){
+					found = true;
+					break;
+				}
+			}
+			if(!found){
+				logger.debug("DL Source of aliases are different");
+				return false;
+			}
 		}
-		else if(alias.getNetworkSource().size() > 0 &&
-				!this.networkSource.contains(alias.getNetworkSource().get(0))){
-			logger.debug("NW Source of aliases are different");
-			return false;
+		else if(alias.getNetworkSource().size() > 0){
+			boolean found = false;
+			for(int src : this.getNetworkSource()){
+				if(src == alias.getNetworkSource().get(0)){
+					found = true;
+					break;
+				}
+			}
+			if(!found){
+				logger.debug("NW Source of aliases are different");
+				return false;
+			}
 		}
-		else if(alias.getNetworkDestination().size() > 0 &&
-				!this.networkDestination.contains(alias.getNetworkDestination().get(0))){
-			logger.debug("NW Destination of aliases are different");
-			return false;
+		else if(alias.getNetworkDestination().size() > 0){
+			boolean found = false;
+			for(int dst : this.getNetworkDestination()){
+				if(dst == alias.getNetworkDestination().get(0)){
+					found = true;
+					break;
+				}
+			}
+			if(!found){
+				logger.debug("NW Destination of aliases are different");
+				return false;
+			}			
 		}
-		else if(alias.getTransportSource().size() > 0 &&
-				!this.transportSource.contains(alias.getTransportSource().get(0))){
-			logger.debug("TP Source of aliases are different");
-			return false;
+		else if(alias.getTransportSource().size() > 0){
+			boolean found = false;
+			for(short src : this.getTransportSource()){
+				if(src == alias.getTransportSource().get(0)){
+					found = true;
+					break;
+				}
+			}
+			if(!found){
+				logger.debug("TP Source of aliases are different");
+				return false;
+			}			
 		}
-		else if(alias.getTransportDestination().size() > 0 &&
-				!this.transportDestination.contains(alias.getTransportDestination().get(0))){
-			logger.debug("TP Destination of aliases are different");
-			return false;
+		else if(alias.getTransportDestination().size() > 0){
+			boolean found = false;
+			for(short dst : this.getTransportDestination()){
+				if(dst == alias.getTransportDestination().get(0)){
+					found = true;
+					break;
+				}
+			}
+			if(!found){
+				logger.debug("TP Destination of aliases are different");
+				return false;
+			}
 		}
 		
 		// passed all the checks
