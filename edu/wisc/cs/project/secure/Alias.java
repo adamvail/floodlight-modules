@@ -62,10 +62,23 @@ public class Alias {
 		if(rule.getActions() != null){
 			this.actions = new ArrayList<OFAction>(rule.getActions());
 		}
+		logger.debug("Match: " + rule.getMatch());
+		
 		loadFromMatch(rule.getMatch());
 		loadActions(rule.getActions());
 		startTime = System.currentTimeMillis() / 1000;
 		hardTimeout = rule.getHardTimeout();
+	}
+	
+	/**
+	 * This is used when deleting flows.
+	 * The switch will send an OFFlowRemoved packet
+	 * which has the match from the flow that was removed.
+	 * 
+	 * @param match - match of the removed flow
+	 */
+	public Alias(OFMatch match){
+		loadFromMatch(match);
 	}
 	
 	public Alias(OFPacketOut po){
@@ -161,28 +174,7 @@ public class Alias {
 			}
 		}
 	}
-	
-	/* --------- GETTERS --------- */
-/*	
-	public HashSet<ArrayList> getAllAttributes(){
-		HashSet<ArrayList> attr = new HashSet<ArrayList>();
-		attr.add(inputPort);
-		attr.add(dataLayerSource);
-		attr.add(dataLayerDestination);
-		attr.add(dataLayerType);
-		attr.add(dataLayerVirtualLan);
-		attr.add(dataLayerVirtualLanPriorityCodePoint);
-		attr.add(networkSource);
-		attr.add(networkDestination);
-		attr.add(networkProtocol);
-		attr.add(networkTypeOfService);
-		attr.add(transportSource);
-		attr.add(transportDestination);
-		attr.add(actions);
 		
-		return attr;
-	}
-*/	
 	public ArrayList<OFAction> getActions(){
 		return actions;
 	}
@@ -241,5 +233,59 @@ public class Alias {
 	
 	public short getHardTimeout(){
 		return hardTimeout;
+	}
+	
+	public boolean equals(Alias alias){
+		
+		// at the moment just check the main stuff
+		
+		if(alias.getInputPort() != this.inputPort){
+			logger.debug("Input ports of aliases are different");
+			return false;
+		}
+		else if(/*(alias.getDataLayerType() == -1 && this.dataLayerType != -1) || */
+				alias.getDataLayerType() != this.dataLayerType){
+			// DataLayer type is not the same
+			logger.debug("DL Type of aliases are different");
+			return false;
+		}
+		else if(/*(alias.getNetworkProtocol() == -1 && this.networkProtocol != -1) || */
+				alias.getNetworkProtocol() != this.networkProtocol){
+			logger.debug("Network Protocol of aliases are different");
+			return false;
+		}
+		else if(alias.getDataLayerDestination().size() > 0 && 
+				!this.dataLayerDestination.contains(alias.getDataLayerDestination().get(0))){
+			logger.debug("DL Destination of aliases are different");
+			return false;
+		}
+		else if(alias.getDataLayerSource().size() > 0 &&
+				!this.dataLayerSource.contains(alias.getDataLayerSource().get(0))){
+			logger.debug("DL Source of aliases are different");
+			return false;
+		}
+		else if(alias.getNetworkSource().size() > 0 &&
+				!this.networkSource.contains(alias.getNetworkSource().get(0))){
+			logger.debug("NW Source of aliases are different");
+			return false;
+		}
+		else if(alias.getNetworkDestination().size() > 0 &&
+				!this.networkDestination.contains(alias.getNetworkDestination().get(0))){
+			logger.debug("NW Destination of aliases are different");
+			return false;
+		}
+		else if(alias.getTransportSource().size() > 0 &&
+				!this.transportSource.contains(alias.getTransportSource().get(0))){
+			logger.debug("TP Source of aliases are different");
+			return false;
+		}
+		else if(alias.getTransportDestination().size() > 0 &&
+				!this.transportDestination.contains(alias.getTransportDestination().get(0))){
+			logger.debug("TP Destination of aliases are different");
+			return false;
+		}
+		
+		// passed all the checks
+		return true;
 	}
 }

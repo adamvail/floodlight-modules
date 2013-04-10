@@ -196,20 +196,21 @@ public abstract class OFSwitchBase implements IOFSwitch {
     	// Interpose here to build the view of current rules
     	// on the switch
     	
-    	if(m.getType() == OFType.FLOW_MOD && !secure.checkFlowRule((OFFlowMod)m, this.getId(), this)){
-			// throw an exception or something
-			// Don't allow the rule to be written to the switch
-			// TODO have some sort of priority attached to who is writing
-			// the rule, since they should be able to overwrite a lesser
-			// priority app's rules
-			return;
-    		
+    	if(m.getType() == OFType.FLOW_MOD){
+	    		if(!secure.checkFlowRule((OFFlowMod)m, this.getId(), this)){
+				// throw an exception or something
+				// Don't allow the rule to be written to the switch
+				// TODO have some sort of priority attached to who is writing
+				// the rule, since they should be able to overwrite a lesser
+				// priority app's rules
+				return;
+    		}
+	    	
+	    	((OFFlowMod)m).setFlags((short)(((OFFlowMod)m).getFlags() | OFFlowMod.OFPFF_SEND_FLOW_REM));
+
     	}
     	else if(m.getType() == OFType.PACKET_OUT && !secure.checkPacketOut((OFPacketOut)m, this.getId())) {
     		return;
-    	}
-    	else if(m.getType() == OFType.FLOW_REMOVED){
-    		secure.removeFlowRule((OFFlowRemoved)m, this.getId());
     	}
     	
         Map<IOFSwitch,List<OFMessage>> msg_buffer_map = local_msg_buffer.get();
@@ -251,9 +252,7 @@ public abstract class OFSwitchBase implements IOFSwitch {
         	else if(m.getType() == OFType.PACKET_OUT && !secure.checkPacketOut((OFPacketOut)m, this.getId())) {
         		break;
         	}
-        	else if(m.getType() == OFType.STATS_REPLY){
-        		secure.checkIdleTimeouts((OFStatisticsReply)m, this.getId());
-        	}
+        	
             if (role == Role.SLAVE) {
                 switch (m.getType()) {
                     case PACKET_OUT:

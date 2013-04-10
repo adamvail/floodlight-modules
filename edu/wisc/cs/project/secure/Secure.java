@@ -1,6 +1,5 @@
 package edu.wisc.cs.project.secure;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -11,9 +10,8 @@ import net.floodlightcontroller.core.OFSwitchBase;
 
 import org.openflow.protocol.OFFlowMod;
 import org.openflow.protocol.OFFlowRemoved;
+import org.openflow.protocol.OFMatch;
 import org.openflow.protocol.OFPacketOut;
-import org.openflow.protocol.OFStatisticsReply;
-import org.openflow.protocol.OFStatisticsRequest;
 import org.openflow.protocol.action.OFAction;
 import org.openflow.protocol.action.OFActionDataLayerDestination;
 import org.openflow.protocol.action.OFActionDataLayerSource;
@@ -27,9 +25,6 @@ import org.openflow.protocol.action.OFActionTransportLayerSource;
 import org.openflow.protocol.action.OFActionVendor;
 import org.openflow.protocol.action.OFActionVirtualLanIdentifier;
 import org.openflow.protocol.action.OFActionVirtualLanPriorityCodePoint;
-import org.openflow.protocol.statistics.OFStatistics;
-import org.openflow.protocol.statistics.OFStatisticsType;
-import org.openflow.protocol.statistics.OFTableStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +60,7 @@ public class Secure {
 	//	sendStatsRequest(sw);
 		
 	//	checkRuleHardTimeouts(dpid);
-		HashSet<Alias> aliases = aliasSet.get(dpid);
+		HashSet<Alias> aliases = getAliasSet(dpid); //aliasSet.get(dpid);
 		
 		// If there are no rules in the flow table, add this one
 		if(aliases == null){
@@ -86,15 +81,8 @@ public class Secure {
 			
 			if(checkActions(cRule.getActions(), fAlias.getActions()) == true){
 				// Actions are the same so add the rule alias to the set
-				if(aliasSet.get(dpid).add(new Alias(cRule)) == true){
-					//logger.debug("-----RULES HAVE THE SAME ACTION----");
-				}
-				else{
-					// alias wasn't able to be added to the set
-					// this means it is already in the flow table
-					// so don't bother writing it out to the switch again
-					return false;
-				}
+				aliases.add(cAlias);
+				putAliasSet(dpid, aliases);
 			}
 			else{
 											
@@ -114,8 +102,9 @@ public class Secure {
 		}
 		
 		// No flow table conflicts, allow rule to be written
-		
 		logger.debug("-----NO CONFLICTS, ALLOW RULE-------");
+		aliases.add(cAlias);
+		putAliasSet(dpid, aliases);
 		return true;
 	}
 	
@@ -145,21 +134,21 @@ public class Secure {
 					// is what floodlight uses to figure out the DL type and the NW Proto
 					// then we can't consider them when deciding to refuse the packet for
 					// a handshake.
-					logger.debug("-------PACKET OUT REJECTED-------");
-					logger.debug("Refused packet = " + po);
+//					logger.debug("-------PACKET OUT REJECTED-------");
+//					logger.debug("Refused packet = " + po);
 					return false;
 				}
 				else if(checkDataLayerType(cPO, fAlias) && checkNetworkProtocol(cPO, fAlias) &&
 						!sourceUnionEmpty && !destinationUnionEmpty){
-					logger.debug("-------PACKET OUT REJECTED-------");
-					logger.debug("Refused packet = " + po);
+//					logger.debug("-------PACKET OUT REJECTED-------");
+//					logger.debug("Refused packet = " + po);
 					return false;
 				}
 								
 			}
 		}
 		
-		logger.debug("------------NO CONFLICTS, ALLOW PACKET OUT-------");
+//		logger.debug("------------NO CONFLICTS, ALLOW PACKET OUT-------");
 		return true;
 	}
 	
@@ -191,12 +180,26 @@ public class Secure {
 	}
 	
 	public void removeFlowRule(OFFlowRemoved flowRemoved, long dpid){
-		logger.debug("\n\nFLow Removed: \n"  + flowRemoved);
-		//HashSet<Alias> aliases;
-	}
-	
-	public void checkIdleTimeouts(OFStatisticsReply sr, long dpid){
-		logger.debug(sr.toString());
+		logger.debug("\nFlow Removed: ");
+		logger.debug("Reason: " + flowRemoved.getReason());
+		OFMatch match = flowRemoved.getMatch();
+		logger.debug("Match: " + match);
+		logger.debug("\n");
+		Alias remove = new Alias(flowRemoved.getMatch());
+		
+		HashSet<Alias> aliases = getAliasSet(dpid);
+		if(aliases != null){ // this shouldn't ever be null, we have a big issue if it is
+			for(Alias alias : aliases){
+				
+				// If found the correct rule, delete it from the set
+				// and then break
+				logger.debug("Equality check: " + alias.equals(remove));
+			}
+		}
+		else {
+			logger.debug("---------Alias set is null!!!!------");
+			return;
+		}
 	}
 	
 	private void checkRuleHardTimeouts(long dpid){
