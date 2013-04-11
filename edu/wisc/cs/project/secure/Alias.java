@@ -51,11 +51,7 @@ public class Alias {
 	private short dataLayerType = -1;
 	private byte networkProtocol = -1;
 	
-	//private short idleTimeout = 0;
-	private short hardTimeout = 0;
-	private long startTime = 0;
-	
-	private ArrayList<OFAction> actions = null;
+	private ArrayList<OFAction> actions = new ArrayList<OFAction>();
 	
 	public Alias(OFFlowMod rule){
 		// need to check for failures adding to the set	
@@ -66,8 +62,6 @@ public class Alias {
 		
 		loadFromMatch(rule.getMatch());
 		loadActions(rule.getActions());
-		startTime = System.currentTimeMillis() / 1000;
-		hardTimeout = rule.getHardTimeout();
 	}
 	
 	/**
@@ -94,6 +88,62 @@ public class Alias {
 		}
 		
 		loadActions(po.getActions());
+	}	
+	
+	Alias(Alias alias){
+		for(byte[] src : alias.getDataLayerSource()){
+			this.dataLayerSource.add(src);
+		}
+		
+		for(byte[] dst : alias.getDataLayerDestination()){
+			this.dataLayerDestination.add(dst);
+		}
+		
+		for(short vlan : alias.getDataLayerVirtualLan()){
+			this.dataLayerVirtualLan.add(vlan);
+		}
+		
+		for(byte vlanPCP : alias.getDataLayerVirtualLanPriorityCodePoint()){
+			this.dataLayerVirtualLanPriorityCodePoint.add(vlanPCP);
+		}
+		
+		this.dataLayerType = alias.getDataLayerType();
+		
+		for(int src : alias.getNetworkSource()){
+			this.networkSource.add(src);
+		}
+		
+		for(int dst : alias.getNetworkDestination()){
+			this.networkDestination.add(dst);
+		}
+		
+		for(byte tos : alias.getNetworkTypeOfService()){
+			this.networkTypeOfService.add(tos);
+		}
+		
+		this.networkProtocol = alias.getNetworkProtocol();
+		
+		for(short src : alias.getTransportSource()){
+			this.transportSource.add(src);
+		}
+		
+		for(short dst : alias.getTransportDestination()){
+			this.transportDestination.add(dst);
+		}
+		
+		this.inputPort = alias.getInputPort();
+		
+		if(alias.getActions() != null){
+			for(OFAction action : alias.getActions()){
+				try {
+					this.actions.add(action.clone());
+				} catch (CloneNotSupportedException e) {
+					// TODO Auto-generated catch block
+					logger.debug("NOT ABLE TO CLONE ALIAS!");
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 	
 	/**
@@ -222,34 +272,26 @@ public class Alias {
 		return transportDestination;
 	}
 	
-	public long getStartTime(){
-		return startTime;
-	}
-	
-	public short getHardTimeout(){
-		return hardTimeout;
-	}
-	
 	public boolean equals(Alias alias){
 		
 		// at the moment just check the main stuff
 		
 		if(alias.getInputPort() != this.inputPort){
-			logger.debug("Input ports of aliases are different");
+//			logger.debug("Input ports of aliases are different");
 			return false;
 		}
 		else if(alias.getDataLayerType() != -1  && 
 				alias.getDataLayerType() != this.dataLayerType){
 			// DataLayer type is not the same
-			logger.debug("DL Type of aliases are different");
-			logger.debug("fAlias: " + this.dataLayerType);
-			logger.debug("cAlias: " + alias.getDataLayerType());
+//			logger.debug("DL Type of aliases are different");
+//			logger.debug("fAlias: " + this.dataLayerType);
+//			logger.debug("cAlias: " + alias.getDataLayerType());
 			return false;
 		}
 		else if(alias.getNetworkProtocol() != -1 && alias.getNetworkProtocol() != this.networkProtocol){
-			logger.debug("Network Protocol of aliases are different");
-			logger.debug("fAlias: " + this.networkProtocol);
-			logger.debug("cAlias: " + alias.getNetworkProtocol());
+//			logger.debug("Network Protocol of aliases are different");
+//			logger.debug("fAlias: " + this.networkProtocol);
+//			logger.debug("cAlias: " + alias.getNetworkProtocol());
 			return false;
 		}
 		else if(alias.getDataLayerDestination().size() > 0){
@@ -261,7 +303,7 @@ public class Alias {
 				}
 			}
 			if(!found){
-				logger.debug("DL Destination of aliases are different");
+//				logger.debug("DL Destination of aliases are different");
 				return false;
 			}			
 		}
@@ -274,7 +316,7 @@ public class Alias {
 				}
 			}
 			if(!found){
-				logger.debug("DL Source of aliases are different");
+//				logger.debug("DL Source of aliases are different");
 				return false;
 			}
 		}
@@ -287,7 +329,7 @@ public class Alias {
 				}
 			}
 			if(!found){
-				logger.debug("NW Source of aliases are different");
+//				logger.debug("NW Source of aliases are different");
 				return false;
 			}
 		}
@@ -300,7 +342,7 @@ public class Alias {
 				}
 			}
 			if(!found){
-				logger.debug("NW Destination of aliases are different");
+//				logger.debug("NW Destination of aliases are different");
 				return false;
 			}			
 		}
@@ -313,7 +355,7 @@ public class Alias {
 				}
 			}
 			if(!found){
-				logger.debug("TP Source of aliases are different");
+//				logger.debug("TP Source of aliases are different");
 				return false;
 			}			
 		}
@@ -326,7 +368,7 @@ public class Alias {
 				}
 			}
 			if(!found){
-				logger.debug("TP Destination of aliases are different");
+//				logger.debug("TP Destination of aliases are different");
 				return false;
 			}
 		}

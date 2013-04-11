@@ -24,6 +24,7 @@ public class SecureFlowRemovedListener implements IOFMessageListener, IFloodligh
       protected IFloodlightProviderService floodlightProvider;
 	  protected static Logger logger;
 	  Secure secure;
+	  private int removalCount = 0;
 
 	  @Override
 	  public String getName() {
@@ -84,8 +85,10 @@ public class SecureFlowRemovedListener implements IOFMessageListener, IFloodligh
 	    
 		// This should be true since I'm' only registered for FLOW_REMOVED packets
 		if(msg.getType() == OFType.FLOW_REMOVED){
-			logger.debug("\n\nGOT A FLOW REMOVED PACKET\n");
+			//logger.debug("\n\nGOT A FLOW REMOVED PACKET\n");
 			secure.removeFlowRule((OFFlowRemoved)msg, sw.getId());
+			removalCount++;
+			logger.debug("Rules Removed: " + this.removalCount);
 		}
 		return Command.CONTINUE;
 	  }

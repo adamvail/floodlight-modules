@@ -2,9 +2,9 @@ package edu.wisc.cs.project.secure;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.floodlightcontroller.core.OFSwitchBase;
 
@@ -32,7 +32,9 @@ public class Secure {
 	protected static Logger logger = LoggerFactory.getLogger(Secure.class);
 	
 	private static Secure instance = null;
-	private HashMap<Long, HashSet<Alias>> aliasSet = new HashMap<Long, HashSet<Alias>>();
+	private ConcurrentHashMap<Long, HashSet<Alias>> aliasSet = new ConcurrentHashMap<Long, HashSet<Alias>>();
+	private int rulesInstalled = 0;
+	private int packetRejected = 0;
 	
 	/**
 	 * This function is used in OFSwitchBase to check rules in the
@@ -72,19 +74,16 @@ public class Secure {
 		}
 				
 		Alias cAlias = new Alias(cRule);
-
 		
 		for(Alias fAlias : aliases){
 			// pairwise comparison of current flow table rules
 			// with the candidate rule
 			
-			if(checkActions(cRule.getActions(), fAlias.getActions()) == true){
-				// Actions are the same so add the rule alias to the set
-				aliases.add(cAlias);
-				putAliasSet(dpid, aliases);
-			}
-			else{
-											
+			Alias fAliasCopy = new Alias(fAlias);
+			
+			// If the actions are them same then allow, move on to the next rule in the flow table
+			if(checkActions(cRule.getActions(), fAliasCopy.getActions()) == false){
+				// Actions weren't the same, so need to check the inside of the rule
 				boolean sourceUnionEmpty = checkAliasSources(cAlias, fAlias);
 				boolean destinationUnionEmpty = checkAliasDestinations(cAlias, fAlias);
 				
@@ -102,8 +101,10 @@ public class Secure {
 		
 		// No flow table conflicts, allow rule to be written
 		logger.debug("-----NO CONFLICTS, ALLOW RULE-------");
+		
 		aliases.add(cAlias);
 		putAliasSet(dpid, aliases);
+		
 		return true;
 	}
 	
@@ -122,25 +123,28 @@ public class Secure {
 		// make sure the po doesn't violate any of the current
 		// rules in the flow table
 		for(Alias fAlias : aliases){
-			if(checkActions(po.getActions(), fAlias.getActions()) == false){
+			Alias fAliasCopy = new Alias(fAlias);
+			if(checkActions(po.getActions(), fAliasCopy.getActions()) == false){
 				
 				// If the actions are not the same need to check the packet
-				boolean sourceUnionEmpty = checkAliasSources(cPO, fAlias);
-				boolean destinationUnionEmpty = checkAliasDestinations(cPO, fAlias); // returning true for some reason
+				boolean sourceUnionEmpty = checkAliasSources(cPO, fAliasCopy);
+				boolean destinationUnionEmpty = checkAliasDestinations(cPO, fAliasCopy);
 				
 				if(po.getPacketData() == null && !sourceUnionEmpty && !destinationUnionEmpty){
 					// TCP handshakes don't have and packet data, since packet data
 					// is what floodlight uses to figure out the DL type and the NW Proto
 					// then we can't consider them when deciding to refuse the packet for
 					// a handshake.
-//					logger.debug("-------PACKET OUT REJECTED-------");
+	//				logger.debug("-------PACKET OUT REJECTED-------");
 //					logger.debug("Refused packet = " + po);
+					packetRejected++;
 					return false;
 				}
-				else if(checkDataLayerType(cPO, fAlias) && checkNetworkProtocol(cPO, fAlias) &&
+				else if(checkDataLayerType(cPO, fAliasCopy) && checkNetworkProtocol(cPO, fAliasCopy) &&
 						!sourceUnionEmpty && !destinationUnionEmpty){
 //					logger.debug("-------PACKET OUT REJECTED-------");
 //					logger.debug("Refused packet = " + po);
+					packetRejected++;
 					return false;
 				}
 								
@@ -170,8 +174,19 @@ public class Secure {
 		}
 	}
 	
-	private HashSet<Alias> getAliasSet(long dpid){
-		return accessAliasSet(dpid, false, null);
+	private synchronized HashSet<Alias> getAliasSet(long dpid){
+		return getSetCopy(accessAliasSet(dpid, false, null));
+	}
+	
+	private HashSet<Alias> getSetCopy(HashSet<Alias> original){
+		if(original == null){
+			return null;
+		}
+		HashSet<Alias> copy = new HashSet<Alias>();
+		for(Alias orig : original){
+			copy.add(new Alias(orig));
+		}
+		return copy;
 	}
 	
 	private synchronized void putAliasSet(long dpid, HashSet<Alias> alias){
@@ -179,11 +194,11 @@ public class Secure {
 	}
 	
 	public void removeFlowRule(OFFlowRemoved flowRemoved, long dpid){
-		logger.debug("Reason: " + flowRemoved.getReason());
+//		logger.debug("Reason: " + flowRemoved.getReason());
 		Alias remove = new Alias(flowRemoved.getMatch());
 		
 		HashSet<Alias> aliases = getAliasSet(dpid);
-		logger.debug("Alias set size: " + aliases.size());
+//		logger.debug("Alias set size: " + aliases.size());
 		if(aliases != null){ // this shouldn't ever be null, we have a big issue if it is
 			Alias toDelete = null;
 			int count = 0;
@@ -205,7 +220,7 @@ public class Secure {
 				putAliasSet(dpid, aliases);
 			}
 		}
-		logger.debug("Alias set size after: " + getAliasSet(dpid).size());
+//		logger.debug("Alias set size after: " + getAliasSet(dpid).size());
 	}
 	
 	private boolean checkDataLayerType(Alias cAlias, Alias fAlias){
@@ -385,7 +400,7 @@ public class Secure {
 	 * @return true or false depending on if the lists are equal to each other
 	 */
 	
-	private boolean checkActions(List<OFAction> cActions, List<OFAction> fActions){
+	private boolean checkActions(List<OFAction> cActions, ArrayList<OFAction> fActions){
 		
 		if(cActions == null && fActions == null){
 			// both are null, so both are drops, allow
@@ -397,19 +412,8 @@ public class Secure {
 			return false;
 		}
 		
-		ArrayList<OFAction> currentFlowActions = new ArrayList<OFAction>(fActions);
-		
-		/*
-		// Check to see if the rules are both forward or both drop
-		boolean cRuleForward = actionsContainOutput(cActions);
-		boolean fRuleForward = actionsContainOutput(fActions);
-		
-		if(cRuleForward == fRuleForward){
-			// they have the same effect, so allow rule to be written to switch
-						
-			return true;
-		}
-		*/
+		// This needs to copied via a copy constructor or a overridden clone function
+		ArrayList<OFAction> currentFlowActions = fActions; //new ArrayList<OFAction>(fActions);
 		
 		// If they aren't the same size they can't be the same action as a whole
 		if(cActions.size() != fActions.size()){
@@ -447,16 +451,7 @@ public class Secure {
 		// Everything checks out to be the same
 		return true;
 	}
-/*	
-	private static boolean actionsContainOutput(List<OFAction> actions){
-		for(OFAction action : actions){
-			if(action instanceof OFActionOutput){
-				return true;
-			}
-		}
-		return false;
-	}
-*/	
+	
 	/**
 	 * Takes two actions and compares them to see if they are equal or not
 	 * 
@@ -578,4 +573,9 @@ public class Secure {
 		return true;
 	}
 	
+	public void incrementRuleCount(){
+		this.rulesInstalled++;
+		logger.debug("Rule Count: " + this.rulesInstalled);
+		logger.debug("Packets Rejected: " + this.packetRejected);
+	}
 }
