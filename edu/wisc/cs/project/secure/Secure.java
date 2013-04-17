@@ -2,9 +2,9 @@ package edu.wisc.cs.project.secure;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import net.floodlightcontroller.core.OFSwitchBase;
 
@@ -32,7 +32,7 @@ public class Secure {
 	protected static Logger logger = LoggerFactory.getLogger(Secure.class);
 	
 	private static Secure instance = null;
-	private ConcurrentHashMap<Long, HashSet<Alias>> aliasSet = new ConcurrentHashMap<Long, HashSet<Alias>>();
+	private ConcurrentHashMap<Long, Vector<Alias>> aliasSet = new ConcurrentHashMap<Long, Vector<Alias>>();
 	private int rulesInstalled = 0;
 	private int packetRejected = 0;
 	
@@ -57,19 +57,17 @@ public class Secure {
 		
 	}
 	
-	public boolean checkFlowRule(OFFlowMod cRule, long dpid, OFSwitchBase sw){
-	//	sendStatsRequest(sw);
-		
-	//	checkRuleHardTimeouts(dpid);
-		HashSet<Alias> aliases = getAliasSet(dpid); //aliasSet.get(dpid);
+	public boolean checkFlowRule(OFFlowMod cRule, long dpid, OFSwitchBase sw){		
+		//Vector<Alias> aliases = Set(dpid); //aliasSet.get(dpid);
+		Vector<Alias> aliases = aliasSet.get(dpid);
 		
 		// If there are no rules in the flow table, add this one
 		if(aliases == null){
 //			logger.debug("------NO RULES IN FLOW TABLE, ALLOW------");
-			HashSet<Alias> alias = new HashSet<Alias>();
+			Vector<Alias> alias = new Vector<Alias>();
 			alias.add(new Alias(cRule));
-			putAliasSet(dpid, alias);
-			//aliasSet.put(dpid, aliases); // use the concurrent method instead
+			//putAliasSet(dpid, alias);
+			aliasSet.put(dpid, alias);
 			return true;
 		}
 				
@@ -78,11 +76,9 @@ public class Secure {
 		for(Alias fAlias : aliases){
 			// pairwise comparison of current flow table rules
 			// with the candidate rule
-			
-			Alias fAliasCopy = new Alias(fAlias);
-			
+						
 			// If the actions are them same then allow, move on to the next rule in the flow table
-			if(checkActions(cRule.getActions(), fAliasCopy.getActions()) == false){
+			if(checkActions(cAlias.getActions(), fAlias.getActions()) == false){
 				// Actions weren't the same, so need to check the inside of the rule
 				boolean sourceUnionEmpty = checkAliasSources(cAlias, fAlias);
 				boolean destinationUnionEmpty = checkAliasDestinations(cAlias, fAlias);
@@ -103,7 +99,8 @@ public class Secure {
 		logger.debug("-----NO CONFLICTS, ALLOW RULE-------");
 		
 		aliases.add(cAlias);
-		putAliasSet(dpid, aliases);
+		//putAliasSet(dpid, aliases);
+		aliasSet.put(dpid, aliases);
 		
 		return true;
 	}
@@ -112,7 +109,8 @@ public class Secure {
 
 	//	checkRuleHardTimeouts(dpid);
 		
-		HashSet<Alias> aliases = getAliasSet(dpid);
+		//Vector<Alias> aliases = getAliasSet(dpid);
+		Vector<Alias> aliases = aliasSet.get(dpid);
 		if(aliases == null){
 			// If there is nothing in the flow table, allow the packet to be written
 			return true;
@@ -122,32 +120,32 @@ public class Secure {
 		
 		// make sure the po doesn't violate any of the current
 		// rules in the flow table
-		for(Alias fAlias : aliases){
-			Alias fAliasCopy = new Alias(fAlias);
-			if(checkActions(po.getActions(), fAliasCopy.getActions()) == false){
-				
-				// If the actions are not the same need to check the packet
-				boolean sourceUnionEmpty = checkAliasSources(cPO, fAliasCopy);
-				boolean destinationUnionEmpty = checkAliasDestinations(cPO, fAliasCopy);
-				
-				if(po.getPacketData() == null && !sourceUnionEmpty && !destinationUnionEmpty){
-					// TCP handshakes don't have and packet data, since packet data
-					// is what floodlight uses to figure out the DL type and the NW Proto
-					// then we can't consider them when deciding to refuse the packet for
-					// a handshake.
-	//				logger.debug("-------PACKET OUT REJECTED-------");
-//					logger.debug("Refused packet = " + po);
-					packetRejected++;
-					return false;
+		synchronized(aliases){
+			for(Alias fAlias : aliases){
+				if(checkActions(cPO.getActions(), fAlias.getActions()) == false){
+					
+					// If the actions are not the same need to check the packet
+					boolean sourceUnionEmpty = checkAliasSources(cPO, fAlias);
+					boolean destinationUnionEmpty = checkAliasDestinations(cPO, fAlias);
+					
+					if(po.getPacketData() == null && !sourceUnionEmpty && !destinationUnionEmpty){
+						// TCP handshakes don't have and packet data, since packet data
+						// is what floodlight uses to figure out the DL type and the NW Proto
+						// then we can't consider them when deciding to refuse the packet for
+						// a handshake.
+		//				logger.debug("-------PACKET OUT REJECTED-------");
+	//					logger.debug("Refused packet = " + po);
+						packetRejected++;
+						return false;
+					}
+					else if(checkDataLayerType(cPO, fAlias) && checkNetworkProtocol(cPO, fAlias) &&
+							!sourceUnionEmpty && !destinationUnionEmpty){
+	//					logger.debug("-------PACKET OUT REJECTED-------");
+	//					logger.debug("Refused packet = " + po);
+						packetRejected++;
+						return false;
+					}									
 				}
-				else if(checkDataLayerType(cPO, fAliasCopy) && checkNetworkProtocol(cPO, fAliasCopy) &&
-						!sourceUnionEmpty && !destinationUnionEmpty){
-//					logger.debug("-------PACKET OUT REJECTED-------");
-//					logger.debug("Refused packet = " + po);
-					packetRejected++;
-					return false;
-				}
-								
 			}
 		}
 		
@@ -164,7 +162,7 @@ public class Secure {
 	 * @param alias - alias to write to the hashmap
 	 * @return - if write is false, then just read the HashSet from for the switch
 	 */
-	private synchronized HashSet<Alias> accessAliasSet(long dpid, boolean write, HashSet<Alias> alias){
+	private synchronized Vector<Alias> accessAliasSet(long dpid, boolean write, Vector<Alias> alias){
 		if(write){
 			aliasSet.put(dpid, alias);
 			return null;
@@ -174,22 +172,23 @@ public class Secure {
 		}
 	}
 	
-	private synchronized HashSet<Alias> getAliasSet(long dpid){
+	private synchronized Vector<Alias> getAliasSet(long dpid){
 		return getSetCopy(accessAliasSet(dpid, false, null));
+		//return accessAliasSet(dpid, false, null);
 	}
 	
-	private HashSet<Alias> getSetCopy(HashSet<Alias> original){
+	private Vector<Alias> getSetCopy(Vector<Alias> original){
 		if(original == null){
 			return null;
 		}
-		HashSet<Alias> copy = new HashSet<Alias>();
+		Vector<Alias> copy = new Vector<Alias>();
 		for(Alias orig : original){
 			copy.add(new Alias(orig));
 		}
 		return copy;
 	}
 	
-	private synchronized void putAliasSet(long dpid, HashSet<Alias> alias){
+	private synchronized void putAliasSet(long dpid, Vector<Alias> alias){
 		accessAliasSet(dpid, true, alias);
 	}
 	
@@ -197,7 +196,8 @@ public class Secure {
 //		logger.debug("Reason: " + flowRemoved.getReason());
 		Alias remove = new Alias(flowRemoved.getMatch());
 		
-		HashSet<Alias> aliases = getAliasSet(dpid);
+		//Vector<Alias> aliases = getAliasSet(dpid);
+		Vector<Alias> aliases = aliasSet.get(dpid);
 //		logger.debug("Alias set size: " + aliases.size());
 		if(aliases != null){ // this shouldn't ever be null, we have a big issue if it is
 			Alias toDelete = null;
@@ -217,7 +217,8 @@ public class Secure {
 			}
 			else if(count == 1){
 				aliases.remove(toDelete);
-				putAliasSet(dpid, aliases);
+				//putAliasSet(dpid, aliases);
+				aliasSet.put(dpid, aliases);
 			}
 		}
 //		logger.debug("Alias set size after: " + getAliasSet(dpid).size());
@@ -400,7 +401,7 @@ public class Secure {
 	 * @return true or false depending on if the lists are equal to each other
 	 */
 	
-	private boolean checkActions(List<OFAction> cActions, ArrayList<OFAction> fActions){
+	private boolean checkActions(CopyOnWriteArrayList<OFAction> cActions, CopyOnWriteArrayList<OFAction> fActions){
 		
 		if(cActions == null && fActions == null){
 			// both are null, so both are drops, allow
@@ -413,7 +414,7 @@ public class Secure {
 		}
 		
 		// This needs to copied via a copy constructor or a overridden clone function
-		ArrayList<OFAction> currentFlowActions = fActions; //new ArrayList<OFAction>(fActions);
+	//	CopyOnWriteArrayList<OFAction> currentFlowActions = fActions; //new ArrayList<OFAction>(fActions);
 		
 		// If they aren't the same size they can't be the same action as a whole
 		if(cActions.size() != fActions.size()){
@@ -423,14 +424,14 @@ public class Secure {
 		// check types and actions for each
 		for(OFAction cAction : cActions){
 			boolean foundSameType = false;
-			for(int i = 0; i < currentFlowActions.size(); i++){
-				if(cAction.getType() == currentFlowActions.get(i).getType()){
+			for(int i = 0; i < fActions.size(); i++){
+				if(cAction.getType() == fActions.get(i).getType()){
 					foundSameType = true;
 					// continue checking inside since they have the same type
-					if(checkInnerAction(cAction, currentFlowActions.get(i))){
+					if(checkInnerAction(cAction, fActions.get(i))){
 						// then the inner actions are the same
 						// get rid of the action in the current rule set
-						currentFlowActions.remove(i);
+						fActions.remove(i);
 						break;
 					}
 					else {

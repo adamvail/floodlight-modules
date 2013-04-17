@@ -3,6 +3,8 @@ package edu.wisc.cs.project.secure;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import net.floodlightcontroller.packet.Ethernet;
 
@@ -51,14 +53,24 @@ public class Alias {
 	private short dataLayerType = -1;
 	private byte networkProtocol = -1;
 	
-	private ArrayList<OFAction> actions = new ArrayList<OFAction>();
+	//private Vector<OFAction> actions = new Vector<OFAction>();
+	private CopyOnWriteArrayList<OFAction> actions = new CopyOnWriteArrayList<OFAction>();
 	
 	public Alias(OFFlowMod rule){
 		// need to check for failures adding to the set	
 		if(rule.getActions() != null){
-			this.actions = new ArrayList<OFAction>(rule.getActions());
+			if(rule.getActions() != null){
+				for(OFAction action : rule.getActions()){
+					try {
+						this.actions.add(action.clone());
+					} catch (CloneNotSupportedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
 		}
-		logger.debug("Match: " + rule.getMatch());
+	//	logger.debug("Match: " + rule.getMatch());
 		
 		loadFromMatch(rule.getMatch());
 		loadActions(rule.getActions());
@@ -78,7 +90,14 @@ public class Alias {
 	public Alias(OFPacketOut po){
 		
 		if(po.getActions() != null){
-			this.actions = new ArrayList<OFAction>(po.getActions());
+			for(OFAction action : po.getActions()){
+				try {
+					this.actions.add(action.clone());
+				} catch (CloneNotSupportedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 		}
 				
 		OFMatch match = new OFMatch();
@@ -220,7 +239,7 @@ public class Alias {
 		}
 	}
 		
-	public ArrayList<OFAction> getActions(){
+	public CopyOnWriteArrayList<OFAction> getActions(){
 		return actions;
 	}
 	
