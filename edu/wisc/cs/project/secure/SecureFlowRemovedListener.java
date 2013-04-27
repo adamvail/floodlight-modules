@@ -88,7 +88,7 @@ public class SecureFlowRemovedListener implements IOFMessageListener, IFloodligh
 			//logger.debug("\n\nGOT A FLOW REMOVED PACKET\n");
 			secure.removeFlowRule((OFFlowRemoved)msg, sw.getId());
 			removalCount++;
-			logger.debug("Rules Removed: " + this.removalCount);
+		//	logger.debug("Rules Removed: " + this.removalCount);
 		}
 		return Command.CONTINUE;
 	  }
