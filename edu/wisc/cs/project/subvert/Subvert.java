@@ -175,14 +175,14 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 	        	logger.debug("Can't find the switch!!!---------------------");
 	        	return Command.CONTINUE;
 	        	// TODO: Handle case where device is not known
-	        }
+	       }
 	        
 	        // Is this the switch H8 is connected to?
 	        if(sw.getId() != deviceAttachment.getSwitchDPID()){
 	        	// Not the switch, allow packet to be forwarded as normal
 	        	return Command.CONTINUE;
 	        }
-		
+			
 	        // This is the switch H8 is connected to
 	        // Remap the packet and install flow rules
 			remapH7toH8(sw, pi, (short)deviceAttachment.getPort());
@@ -459,6 +459,11 @@ public class Subvert implements IOFMessageListener, IFloodlightModule, IOFSwitch
 	public void addedSwitch(IOFSwitch sw) {
 		//logger.debug("------------------NEW SWITCH ADDED, IN SUBVERT---------------");
 		//puntToController(sw);
+		// with multi switch topology, need to do this 
+		// to get around the forwarding module
+		if(sw.getId() == 7){
+			puntToController(sw);
+		}
 		
 	}
 

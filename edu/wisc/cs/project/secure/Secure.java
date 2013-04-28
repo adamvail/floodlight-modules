@@ -89,7 +89,7 @@ public class Secure {
 					// Don't allow the rule to be written to the switch
 					
 					logger.debug("-------RULE REJECTED--------");
-					logger.debug("Refused rule = " + cRule);
+					logger.debug("Refused switch = " + dpid + "\nRule Count: " + aliases.size());
 					return false;
 				}
 			}
@@ -198,30 +198,39 @@ public class Secure {
 		
 		//Vector<Alias> aliases = getAliasSet(dpid);
 		Vector<Alias> aliases = aliasSet.get(dpid);
-//		logger.debug("Alias set size: " + aliases.size());
 		if(aliases != null){ // this shouldn't ever be null, we have a big issue if it is
-			Alias toDelete = null;
+			Vector<Alias> toDelete = new Vector<Alias>();
 			int count = 0;
 			for(Alias alias : aliases){
 				// Look for the flow rule in the set that corresponds to the removal
 				// notification
 				//logger.debug("Equality check: " + alias.equals(remove));
 				if(alias.equals(remove)){
-					toDelete = alias;
+					toDelete.add(alias);// = alias;
 					count++;
-				}
+				}				
 			}
-			if(count > 1){
+			// Delete all the aliases that we found that match (might be too liberal, especially since there
+			// is no guarantee that the equality function is specific enough)
+			logger.debug("Deleting " + toDelete.size() + " Rules");
+			for(Alias del : toDelete){
+				aliases.remove(del);
+			}
+			aliasSet.put(dpid, aliases);
+		/*	if(count > 1){
 				logger.debug("\n\n\n FOUND MORE THAN ONE ALIAS TO REMOVE ON FLOW REMOVAL\n\n");
-				return;
+				aliases.remove(toDelete);
+				aliasSet.put(dpid, aliases);
+				//return;
 			}
 			else if(count == 1){
 				aliases.remove(toDelete);
 				//putAliasSet(dpid, aliases);
 				aliasSet.put(dpid, aliases);
+				logger.debug("Removing rule: dpid = " + dpid + " Size = " + aliases.size());
 			}
+			*/
 		}
-//		logger.debug("Alias set size after: " + getAliasSet(dpid).size());
 	}
 	
 	private boolean checkDataLayerType(Alias cAlias, Alias fAlias){

@@ -17,7 +17,10 @@
 
 package net.floodlightcontroller.core;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,7 +53,6 @@ import org.codehaus.jackson.map.ser.ToStringSerializer;
 import org.jboss.netty.channel.Channel;
 import org.openflow.protocol.OFFeaturesReply;
 import org.openflow.protocol.OFFlowMod;
-import org.openflow.protocol.OFFlowRemoved;
 import org.openflow.protocol.OFMatch;
 import org.openflow.protocol.OFMessage;
 import org.openflow.protocol.OFPacketOut;
@@ -58,7 +60,6 @@ import org.openflow.protocol.OFPhysicalPort;
 import org.openflow.protocol.OFPhysicalPort.OFPortConfig;
 import org.openflow.protocol.OFPhysicalPort.OFPortState;
 import org.openflow.protocol.OFPort;
-import org.openflow.protocol.OFStatisticsReply;
 import org.openflow.protocol.OFStatisticsRequest;
 import org.openflow.protocol.OFType;
 import org.openflow.protocol.statistics.OFStatistics;
@@ -196,6 +197,9 @@ public abstract class OFSwitchBase implements IOFSwitch {
     	// Interpose here to build the view of current rules
     	// on the switch
     	
+    	// Time how long the function takes
+  //  	long start = System.nanoTime();
+    	
     	if(m.getType() == OFType.FLOW_MOD){
 	    		if(!secure.checkFlowRule((OFFlowMod)m, this.getId(), this)){
 				// throw an exception or something
@@ -207,7 +211,7 @@ public abstract class OFSwitchBase implements IOFSwitch {
     		}
 	    	
 	    	((OFFlowMod)m).setFlags((short)(((OFFlowMod)m).getFlags() | OFFlowMod.OFPFF_SEND_FLOW_REM));
-
+	    	secure.incrementRuleCount();
     	}
     	else if(m.getType() == OFType.PACKET_OUT && !secure.checkPacketOut((OFPacketOut)m, this.getId())) {
     		return;
@@ -228,6 +232,26 @@ public abstract class OFSwitchBase implements IOFSwitch {
             this.write(msg_buffer);
             msg_buffer.clear();
         }
+     //   long end = System.nanoTime();
+       // long duration = end - start;
+       // saveTimingData("insecurePing", duration + "");
+    }
+    
+    private void saveTimingData(String filename, String output){
+	  PrintWriter pw = null;
+
+	  try {
+	     File file = new File(filename);
+	     FileWriter fw = new FileWriter(file, true);
+	     pw = new PrintWriter(fw);
+	     pw.println(output);
+	  } catch (IOException e) {
+	     e.printStackTrace();
+	  } finally {
+	     if (pw != null) {
+	        pw.close();
+	     }
+	  }
     }
 
     @Override
@@ -240,6 +264,7 @@ public abstract class OFSwitchBase implements IOFSwitch {
     public void write(List<OFMessage> msglist, 
                       FloodlightContext bc) throws IOException {
         for (OFMessage m : msglist) {
+        	        	
         	if(m.getType() == OFType.FLOW_MOD && !secure.checkFlowRule((OFFlowMod)m, this.getId(), this)){
     			// throw an exception or something
     			// Don't allow the rule to be written to the switch
