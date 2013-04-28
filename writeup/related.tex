@@ -1,2 +1,26 @@
 \section{Related Work}
 \label{sec:related}
+
+As mentioned earlier, much of our work was inspired by FortNox. Although, there have been other approaches to security in software defined networks as well.
+
+Ethane \cite{Casado:2007:ETC:1282380.1282382} was a predecessor and driving force behind the development of software defined networking as we see it today.
+It was born out of the need to be able to manage and enforce fine-grained policies across an entire network.
+The design of Ethane consists of a central controller and dumb switches, which are the building blocks of SDN today.
+This system was designed with security in mind since enforcing security in an enterprise network is essentially a set of policies that need to be managed across the entire network.
+Ethane provides ease of management for network policies, but it does not address how a controller is to protect against conflicting policies introduced by administrators and third party applications.
+
+FlowVisor \cite{flowvisor} allows for a single physical network to be divided into logical "slices."
+Each slice received its own controller and therefore runs its own set of application of the controller.
+This provides isolation between the different applications and guarantees that they do not misbehave with each other.
+While this is desireable, it is not practical to expect an enterprise to create a new network slice, and thus a new controller, for every third party application.
+The management of these different entitites could get very complicated very quickly.
+Also, FlowVisor does not provide any security within a slice.
+Therefore, if there is a need to run several applications on the same network slice, there is no guarantee that they will cooperate with each other.
+
+%Our work is based off of FortNOX \cite{Porras:2012:SEK:2342441.2342466}, a security enforcement kernel for the NOX OpenFlow Controller \cite{Gude:2008:NTO:1384609.1384625}.
+%FortNOX provides role-based authorization and security constraint enforcement for applications running on the controller.
+%They proposed reducing flow rules into alias reduced rules which are then compared to detect conflicts.
+%We created our own version of alias reduced rules within the confines of how Floodlight represents flow rules.
+
+\subsection{Issues with FortNOX}
+\label{sec:fortnox}
