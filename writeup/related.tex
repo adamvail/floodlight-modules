@@ -12,8 +12,8 @@ Ethane provides ease of management for network policies, but it does not address
 FlowVisor \cite{flowvisor} allows for a single physical network to be divided into logical "slices."
 Each slice received its own controller and therefore runs its own set of application of the controller.
 This provides isolation between the different applications and guarantees that they do not misbehave with each other.
-While this is desireable, it is not practical to expect an enterprise to create a new network slice, and thus a new controller, for every third party application.
-The management of these different entitites could get very complicated very quickly.
+While this is desirable, it is not practical to expect an enterprise to create a new network slice, and thus a new controller, for every third party application.
+The management of these different entities could get very complicated very quickly.
 Also, FlowVisor does not provide any security within a slice.
 Therefore, if there is a need to run several applications on the same network slice, there is no guarantee that they will cooperate with each other.
 
