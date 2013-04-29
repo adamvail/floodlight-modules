@@ -53,5 +53,24 @@ The conflict detection algorithm works as follows:
 \item If both unions result in non-empty sets, then there is a conflict. Otherwise, allow the candidate rule and add cARR to the switch's set of active ARRs.
 \end{enumerate} 
 
-As an example, consider the ARRs we created above:
- 
+As an example, consider the ARRs we created above where the static firewall rule is currently in the switch (fARR) and the subversive application's remapping rule is the candidate (cARR):
+
+\begin{enumerate}
+\item The two ARRs have different actions. fARR = drop and cARR = forward. Therefore we need to check the source and destination sets of the two ARRs.
+\item The two source sets intersect, therefore we take the union of the sets:
+\begin{equation} 
+(h1) \bigcap (h1) \Rightarrow (h1) 
+\end{equation}
+\item The destination sets intersect (h8:80), therefore we take the union of the sets:
+\begin{equation} 
+(h8:80) \bigcap (h7:80) (h8:80)  \Rightarrow (h7:80) (h8:80) 
+\end{equation}
+\end{itemize} 
+
+This leaves the two sets non-empty, and Floodlight sees that these two rules are in conflict.
+In the case where a rule has wildcarded fields, the union includes the "widest" possible rule.
+For example, if the static firewall rule wanted to drop all traffic to \texttt{h8} regardless of destination port then the union would be:
+\begin{equation}
+(h8) \bigcap (h7:80) (h8:80) \Rightarrow (h7:80) (h8)
+\end{equation}
+
