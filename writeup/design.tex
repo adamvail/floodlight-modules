@@ -1,0 +1,57 @@
+\section{Design}
+\label{sec:design}
+
+We have extended the Floodlight OpenFlow controller to ensure two conflicting OpenFlow rules can not be present on a switch at the same time.
+Since Floodlight has a global view of the network it can make informed decisions concerned which rules an application is allowed to install on a switch and which rules should be disalowed.
+Much of our work for Floodlight was inspired by FortNOX \cite{Porras:2012:SEK:2342441.2342466}.
+FortNOX created a security enforcement kernel for the NOX OpenFlow controller \cite{Gude:2008:NTO:1384609.1384625} which did similar things to what we have created in Floodlight.
+Unfortunately, NOX is no longer under development and FortNOX was never released to the public.
+The need for functionality similar to FortNOX in a widely supported controller drove us extend Floodlight.
+We also discovered several shortcomings of FortNOX which we adressed in our Floodlight implementation.
+
+\subsection{Critiques of FortNOX}
+\label{subsec:critique}
+% TODO for Rob
+
+\subsection{Alias Reduced Rules}
+\label{subsec:arr}
+The main thing we borrowed from FortNOX was their idea of a representing OpenFlow messages as \emph{alias reduced rules} (ARR).
+An ARR is simply an expansion of a rule's match headers along with its actions.
+This allows the controller to see the full effect the rule will have on flows moving through the switch.
+ARRs are then used by Floodlight to determine if there is a conflict between an active rule in the switch's flow table and a candidate rule that an application is attempting to install.
+If no conflict is found then the candidate rule is allowed to be written to the switch.
+An example, using the two applications we mentioned above, is as follows.
+
+The firewall application installs a static flow rule upon switch connection that states:
+
+\begin{equation}\label{eq:staticfirewall}
+(h1) \rightarrow (h8:80) \Rightarrow Action: drop
+\end{equation}
+
+The subversive application dynamically installs a flow rule to remap the destination and port number of \texttt{h1}'s packets to \texttt{h7} on port \texttt{80}:
+
+\begin{equation}\label{eq:subversive}
+(h1) \rightarrow (h7:80) \Rightarrow Action: set (dst = h8) and (port = 80)
+\end{equation}
+
+The ARR for rule \ref{eq:staticfirewall} looks essentially the same as the rule itself.
+The ARR for rule \ref{eq:subversive} expands the rule into:
+
+\begin{equation}\label{eq:arrsubversive}
+(h1) \rightarrow (h7:80) (h8:80) \Rightarrow Action: forward
+\end{equation}
+
+\subsection{Detecting Conflict}
+\label{subsec:conflict}
+Floodlight maintains a per switch set of ARRs that correspond to active rules in the switch's flow table.
+When an application attempts to add a rule to the switch's flow table, Floodlight creates an ARR for the candidate rule (cARR) and does a pairwise check of the candidate ARR with every other ARR representing active rules in the switch's flow table (fARR).
+The conflict detection algorithm works as follows:
+\begin{enumerate}
+\item If the cARR and fARR have the same actions, then allow the candidate.
+\item If the cARR and fARR have any intersection in their source sets, then take the union of the two source sets.
+\item If the cARR and fARR have any intersection in their destination sets, then take the union of the two destination sets.
+\item If both unions result in non-empty sets, then there is a conflict. Otherwise, allow the candidate rule and add cARR to the switch's set of active ARRs.
+\end{enumerate} 
+
+As an example, consider the ARRs we created above:
+ 

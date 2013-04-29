@@ -9,7 +9,7 @@ SDN implementations today require switches that can take direction from a centra
 These switches can be software based, such as Open vSwitch \cite{DBLP:conf/hotnets/PfaffPACKS09}, or hardware switches which offer traditional and SDN modes of operation.
 Switches deployed today for use in a software defined network generally communicate to the controller using the OpenFlow protocol.
 
-OpenFlow \cite{openflow} is a standardized protocol that facilitates coordination between the data plane, which resides in the switch, and the control plane, which resides in controller.
+OpenFlow \cite{McKeown:2008:OEI:1355734.1355746} is a standardized protocol that facilitates coordination between the data plane, which resides in the switch, and the control plane, which resides in controller.
 The controller makes high level decisions, such as routing, dropping a packet, or forwarding a packet, and communicates these decisions using OpenFlow messages.
 The messages are stored in the switch's "flow table" which allows the switch to handle packets without repeatedly involving the controller. 
 
