@@ -2,11 +2,11 @@
 \label{sec:design}
 
 We have extended the Floodlight OpenFlow controller to ensure two conflicting OpenFlow rules can not be present on a switch at the same time.
-Since Floodlight has a global view of the network it can make informed decisions concerned which rules an application is allowed to install on a switch and which rules should be disalowed.
+Since Floodlight has a global view of the network it can make informed decisions concerning which rules an application is allowed to install on a switch and which rules should be disalowed.
 Much of our work for Floodlight was inspired by FortNOX \cite{Porras:2012:SEK:2342441.2342466}.
 FortNOX created a security enforcement kernel for the NOX OpenFlow controller \cite{Gude:2008:NTO:1384609.1384625} which did similar things to what we have created in Floodlight.
 Unfortunately, NOX is no longer under development and FortNOX was never released to the public.
-The need for functionality similar to FortNOX in a widely supported controller drove us extend Floodlight.
+The need for functionality similar to FortNOX in a widely supported controller motivated us to extend Floodlight.
 We also discovered several shortcomings of FortNOX which we adressed in our Floodlight implementation.
 
 \subsection{Alias Reduced Rules}
@@ -20,22 +20,36 @@ To illustrate a malicious rule that would be targeted by our application, we pre
 
 The firewall application installs a static flow rule upon switch connection that states:
 
-\begin{equation}\label{eq:staticfirewall}
-(h1) \rightarrow (h8:80) \Rightarrow Action: drop
-\end{equation}
+
+\begin{align}
+\begin{aligned}
+\label{eq:staticfirewall}
+(h1) \rightarrow (h8:80) \Rightarrow Action: drop 
+\end{aligned}
+\end{align}
+
 
 In the attack, the subversive application dynamically installs a flow rule to remap the destination and port number of \texttt{h1}'s packets to \texttt{h7} on port \texttt{80}:
 
-\begin{equation}\label{eq:subversive}
-(h1) \rightarrow (h7:80) \Rightarrow Action: set (dst = h8) and (port = 80)
-\end{equation}
+
+\begin{align}
+\begin{aligned}
+\label{eq:subversive}
+&(h1) \rightarrow (h7:80) \Rightarrow  \\
+    &\qquad Action: set (dst = h8), (port = 80) 
+\end{aligned}
+\end{align}
+
 
 The ARR for rule \ref{eq:staticfirewall} looks essentially the same as the rule itself.
 The ARR for rule \ref{eq:subversive} expands the rule into:
 
-\begin{equation}\label{eq:arrsubversive}
-(h1) \rightarrow (h7:80) (h8:80) \Rightarrow Action: forward
-\end{equation}
+\begin{align}
+\begin{aligned}
+(h1) \rightarrow (h7:80)&(h8:80) \Rightarrow \\ 
+     &\qquad Action: forward \nonumber
+\end{aligned}
+\end{align}
 
 \subsection{Detecting Conflict}
 \label{subsec:conflict}
@@ -52,23 +66,30 @@ The conflict detection algorithm works as follows:
 As an example, consider the ARRs we created above where the static firewall rule is currently in the switch (fARR) and the subversive application's remapping rule is the candidate (cARR):
 
 \begin{enumerate}
-\item The two ARRs have different actions. fARR = drop and cARR = forward. Therefore we need to check the source and destination sets of the two ARRs.
+\item The two ARRs have different actions. \mbox{fARR = drop} and \mbox{cARR = forward}. Therefore we need to check the source and destination sets of the two ARRs.
 \item The two source sets intersect, therefore we take the union of the sets:
-\begin{equation} 
-(h1) \bigcap (h1) \Rightarrow (h1) 
-\end{equation}
+\begin{align}
+\begin{aligned}
+(h1) \cap (h1) = (h1) \nonumber
+\end{aligned}
+\end{align}
 \item The destination sets intersect (h8:80), therefore we take the union of the sets:
-\begin{equation} 
-(h8:80) \bigcap (h7:80) (h8:80)  \Rightarrow (h7:80) (h8:80) 
-\end{equation}
+\begin{align}
+\begin{aligned}
+(h8:80) \cap (h7:80)&(h8:80) = \\
+        & \qquad (h7:80) (h8:80) \nonumber
+\end{aligned}
+\end{align}
 \end{enumerate} 
 
 This leaves the two sets non-empty, and Floodlight sees that these two rules are in conflict.
 In the case where a rule has wildcarded fields, the union includes the "widest" possible rule.
 For example, if the static firewall rule wanted to drop all traffic to \texttt{h8} regardless of destination port then the union would be:
-\begin{equation}
-(h8) \bigcap (h7:80) (h8:80) \Rightarrow (h7:80) (h8)
-\end{equation}
+\begin{align}
+\begin{aligned}
+(h8) \cap (h7:80) (h8:80) =  (h7:80) (h8) \nonumber
+\end{aligned}
+\end{align}
 
 
 \subsection{Critiques of FortNOX and Implementation Challenges}
