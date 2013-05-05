@@ -20,6 +20,12 @@ To illustrate a malicious rule that would be targeted by our application, we pre
 
 The firewall application installs a static flow rule upon switch connection that states:
 
+\begin{align}
+\begin{aligned}
+\label{eq:staticfirewall}
+(h1) \rightarrow (h8:80) \Rightarrow Action: drop 
+\end{aligned}
+\end{align}
 
 \begin{align}
 \begin{aligned}
@@ -28,9 +34,11 @@ The firewall application installs a static flow rule upon switch connection that
 \end{aligned}
 \end{align}
 
+In the attack, the subversive application dynamically installs a flow rule that will effectively allow traffic from \texttt{h1} to be delivered to \texttt{h8} by remapping the destination of packets being sent from \texttt{h1} to some dummy host \texttt{h7} to instead be delivered to the destination of \texttt{h2:80}. Clearly, \texttt{h1} can effectively communicate with \texttt{h8} by sending its packets to \texttt{h7} instead.
 
-In the attack, the subversive application dynamically installs a flow rule to remap the destination and port number of \texttt{h1}'s packets to \texttt{h7} on port \texttt{80}:
-
+\begin{equation}\label{eq:subversive}
+(h1) \rightarrow (h7:80) \Rightarrow Action: set (dst = h8), (port = 80)
+\end{equation}
 
 \begin{align}
 \begin{aligned}
@@ -40,6 +48,20 @@ In the attack, the subversive application dynamically installs a flow rule to re
 \end{aligned}
 \end{align}
 
+\begin{align}
+\begin{aligned}
+\label{eq:subversive}
+&(h1) \rightarrow (h7:80) \Rightarrow  \\
+    &\qquad Action: set (dst = h8), (port = 80) 
+\end{aligned}
+\end{align}
+
+The ARR for rule \ref{eq:staticfirewall} looks the same as the rule itself, combining its match with its actions.
+The ARR for rule \ref{eq:subversive} expands the rule into:
+
+\begin{equation}\label{eq:arrsubversive}
+(h1) \rightarrow \{(h7:80) (h8:80)\} \Rightarrow Action: forward
+\end{equation}
 
 The ARR for rule \ref{eq:staticfirewall} looks essentially the same as the rule itself.
 The ARR for rule \ref{eq:subversive} expands the rule into:
@@ -54,7 +76,7 @@ The ARR for rule \ref{eq:subversive} expands the rule into:
 \subsection{Detecting Conflict}
 \label{subsec:conflict}
 Floodlight maintains a per switch set of ARRs that correspond to active rules in the switch's flow table.
-When an application attempts to add a rule to the switch's flow table, Floodlight creates an ARR for the candidate rule (cARR) and does a pairwise check of the candidate ARR with every other ARR representing active rules in the switch's flow table (fARR).
+When an application attempts to add a rule to the switch's flow table, Floodlight creates an ARR for the candidate rule (cARR) and does a pairwise check of the candidate ARR with every ARR representing active rules in the switch's flow table (fARR). A table of rules currently in the switch is maintained in our Floodlight module. Rule timeouts are registered by using the OpenFlow callback functionality, which registers an event with the controller upon timeout. %[TODO: elaborate]
 The conflict detection algorithm works as follows:
 \begin{enumerate}
 \item If the cARR and fARR have the same actions, then allow the candidate.
@@ -98,12 +120,24 @@ In designing our implementation of alias reduced rules for rule conflict avoidan
 
 Note that all of our critiques are based solely on the information provided in \cite{Porras:2012:SEK:2342441.2342466}, as the reference implementation of FortNOX was never made public due to concerns about its viability and completeness.\footnote{We confirmed this in communication with FortNOX author Phil Porras.} A reference implementation of SE-Floodlight (secure Floodlight) by the same authors, has been proposed for release in summer 2013. While it is possible that SE-Floodlight will address our concerns, there is currently no implementation available on which to base more specific critiques.
 
-\subsection{Examining Packet Out}
+\subsection{Examining Controller-Based Rule Evasion}
 FortNOX focuses only examining and filtering out conflicting \emph{flow rules} from being inserted into switches. However, packet rewriting and manipulation is not limited to flow rules inserted into the switches themselves. Rules can be inserted that, when matched, forward the packet to the controller. This could happen because a new flow has arrived at a switch for which there is not yet a corresponding flow rule, or because an idle or hard timeout means that a previous flow rule has been discarded from the switch. At this point, a subversive application can arbitrarily rewrite a packet \emph{in the controller} in order to subvert rules, before sending it back to the switch to be forwarded. Even if another application in the controller installs a corresponding rule during the same session in the controller, the damage has already been done. 
 
 In order to defend against malicious flow subversion at the controller level, our implementation examines the actions of both attempted flow-table insertions, and of \texttt{PACKET\_OUT} events. That is, we examine outgoing packets to see if they conflict with any of our alias reduced rules in our in-memory mapping of allowed actions. This prevents malicious actions by applications both at the flow-rule level and the controller level.
 
 \subsection{Malicious Tunneling Across Switches}
-One of the more substantial issues with the FortNOX approach is that it only verifies that a candidate rule is not in conflict with the current ruleset of a \emph{single} switch's rules. Enforcement at the level of a single switch is suitible only to thwart the simplest attacks, such as the single-rule dynamic tunneling attack outlined in \ref{subsec:arr}. 
+One of the more substantial issues with the FortNOX approach is that it only verifies that a candidate rule is not in conflict with the current ruleset of a \emph{single} switch. Enforcement at the level of a single switch is sufficient only to thwart the simplest attacks, such as the single-rule dynamic tunneling attack outlined above in \ref{subsec:arr}. However, when a Floodlight application can install rules into multiple switches and/or manipulate packets flowing through multiple switches, installing a candidate ARR requires verifying that its installation would not create a flow that would subvert any existing flow restrictions throughout the network. In other words, to adequately protect the \emph{network}, enforcement must be considered on the level of the whole network, not just a single switch.
 
-However, when a Floodlight application can install rules into multiple switches and/or manipulate packets flowing through multiple switches, comparing new rule insertions with each switch ruleset in isolation is not sufficient to detect conflicts. Consider a simple extension to the dynamic tunneling attack, as follows:
+Consider a simple extension to the dynamic tunneling attack, where the legitimate rule is once again $(h1) \RightArrow (h8:80): DROP$. Then the subversion rules we be as follows: 
+
+\begin{align}
+  Sw1: (h1) \Rightarrow (h6): set(src=h6, dest=h7) \\
+  Sw1: (h7) \Rightarrow (h6): set(src=h6, dest=h1) \\
+  Sw2: (h6) \Rightarrow (h7): set(dest=h8) \\
+  Sw2: (h8) \Rightarrow (h6): set(src=h7)
+\end{align}
+
+Assuming the malicious application installs each of these rules in turn, each is considered as a candidate ARR (cARR) and checked pairwise against existing rules according to the procedure described in Subsection \ref{subsec:conflict} above. Recall that the algorithm builds the union of source and destination rules and actions between the cARR and each fARR in the flow table, and detects a conflict if actions differ and the intersection of the sources and destinations of the ARRs are non-empty. In this case though, testing the insertion of the rules into Sw1 would yield a empty destination set since \texttt{h8} does not appear in the cARRs' destination sets. Similarly, \texttt{h1} does not appear in the cARRs' source sets for the rules inserted into Sw2, so they would be inserted successfully. 
+
+Our implementation follows that of FortNOX in blocking the insertion of conflicting rules on a single switch. However, blocking the insertion of malicious dynamic tunneling across switches in a large network and with an arbitrary topology does not admit a simple solution. One approach might be to simply follow....
+
