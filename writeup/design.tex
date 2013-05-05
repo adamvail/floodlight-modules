@@ -20,6 +20,17 @@ To illustrate a malicious rule that would be targeted by our application, we pre
 
 The firewall application installs a static flow rule upon switch connection that states:
 
+<<<<<<< HEAD
+=======
+
+\begin{align}
+\begin{aligned}
+\label{eq:staticfirewall}
+(h1) \rightarrow (h8:80) \Rightarrow Action: drop 
+\end{aligned}
+\end{align}
+
+>>>>>>> 27ac8efe109a5f3d1c5fa9a0bde26d9e549e710d
 
 \begin{align}
 \begin{aligned}
@@ -32,10 +43,22 @@ The firewall application installs a static flow rule upon switch connection that
 In the attack, the subversive application dynamically installs a flow rule that will effectively allow traffic from \texttt{h1} to be delivered to \texttt{h8} by remapping the destination of packets being sent from \texttt{h1} to some dummy host \texttt{h7} to instead be delivered to the destination of \texttt{h2:80}. Clearly, \texttt{h1} can effectively communicate with \texttt{h8} by sending its packets to \texttt{h7} instead.
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 \begin{equation}\label{eq:subversive}
 (h1) \rightarrow (h7:80) \Rightarrow Action: set (dst = h8), (port = 80)
 \end{equation}
 =======
+=======
+
+\begin{align}
+\begin{aligned}
+\label{eq:subversive}
+&(h1) \rightarrow (h7:80) \Rightarrow  \\
+    &\qquad Action: set (dst = h8), (port = 80) 
+\end{aligned}
+\end{align}
+
+>>>>>>> 27ac8efe109a5f3d1c5fa9a0bde26d9e549e710d
 
 \begin{align}
 \begin{aligned}
@@ -51,16 +74,22 @@ The ARR for rule \ref{eq:staticfirewall} looks the same as the rule itself, comb
 The ARR for rule \ref{eq:subversive} expands the rule into:
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 \begin{equation}\label{eq:arrsubversive}
 (h1) \rightarrow \{(h7:80) (h8:80)\} \Rightarrow Action: forward
 \end{equation}
 =======
+=======
+>>>>>>> 27ac8efe109a5f3d1c5fa9a0bde26d9e549e710d
 \begin{align}
 \begin{aligned}
 (h1) \rightarrow (h7:80)&(h8:80) \Rightarrow \\ 
      &\qquad Action: forward \nonumber
 \end{aligned}
 \end{align}
+<<<<<<< HEAD
+>>>>>>> 27ac8efe109a5f3d1c5fa9a0bde26d9e549e710d
+=======
 >>>>>>> 27ac8efe109a5f3d1c5fa9a0bde26d9e549e710d
 
 \subsection{Detecting Conflict}
