@@ -9,18 +9,14 @@ Unfortunately, NOX is no longer under development and FortNOX was never released
 The need for functionality similar to FortNOX in a widely supported controller drove us extend Floodlight.
 We also discovered several shortcomings of FortNOX which we adressed in our Floodlight implementation.
 
-\subsection{Critiques of FortNOX}
-\label{subsec:critique}
-% TODO for Rob
-
 \subsection{Alias Reduced Rules}
 \label{subsec:arr}
-The main thing we borrowed from FortNOX was their idea of a representing OpenFlow messages as \emph{alias reduced rules} (ARR).
+In order to detect rule conflicts, we borrowed the idea presented in FortNOX of representing OpenFlow messages as \emph{alias reduced rules} (ARR).
 An ARR is simply an expansion of a rule's match headers along with its actions.
-This allows the controller to see the full effect the rule will have on flows moving through the switch.
-ARRs are then used by Floodlight to determine if there is a conflict between an active rule in the switch's flow table and a candidate rule that an application is attempting to install.
+This allows the controller to see the full effect the rule will have on flows moving through the switch, effectively incorporating both the input (the match) and the output (the effect of the actions) of a given rule.
+Our Floodlight module then compares candidate-rule ARRs and outgoing packets against a table of these ARRs stored in our application to determine if there is a conflict between an active rule in the switch's flow table and a candidate rule that an application is attempting to install.
 If no conflict is found then the candidate rule is allowed to be written to the switch.
-An example, using the two applications we mentioned above, is as follows.
+To illustrate a malicious rule that would be targeted by our application, we present a simple example of what FortNOX calls ``dynamic-flow tunneling.'' Effectively, if one imagines a simple firewall implemented by a rule dropping all packets matching a given flow, a malicious application could insert a rule remapping that flow around the firewall rule, effectively circumventing it. 
 
 The firewall application installs a static flow rule upon switch connection that states:
 
@@ -28,7 +24,7 @@ The firewall application installs a static flow rule upon switch connection that
 (h1) \rightarrow (h8:80) \Rightarrow Action: drop
 \end{equation}
 
-The subversive application dynamically installs a flow rule to remap the destination and port number of \texttt{h1}'s packets to \texttt{h7} on port \texttt{80}:
+In the attack, the subversive application dynamically installs a flow rule to remap the destination and port number of \texttt{h1}'s packets to \texttt{h7} on port \texttt{80}:
 
 \begin{equation}\label{eq:subversive}
 (h1) \rightarrow (h7:80) \Rightarrow Action: set (dst = h8) and (port = 80)
@@ -65,7 +61,7 @@ As an example, consider the ARRs we created above where the static firewall rule
 \begin{equation} 
 (h8:80) \bigcap (h7:80) (h8:80)  \Rightarrow (h7:80) (h8:80) 
 \end{equation}
-\end{itemize} 
+\end{enumerate} 
 
 This leaves the two sets non-empty, and Floodlight sees that these two rules are in conflict.
 In the case where a rule has wildcarded fields, the union includes the "widest" possible rule.
@@ -74,3 +70,19 @@ For example, if the static firewall rule wanted to drop all traffic to \texttt{h
 (h8) \bigcap (h7:80) (h8:80) \Rightarrow (h7:80) (h8)
 \end{equation}
 
+
+\subsection{Critiques of FortNOX and Implementation Challenges}
+\label{subsec:critique}
+In designing our implementation of alias reduced rules for rule conflict avoidance, we encountered a number of apparent shortcomings and blind spots in the FortNOX implementation that would still allow a subversive application to insert conflicting rules without detection. Our critiques, and the corresponding challenges are detailed below.
+
+Note that all of our critiques are based solely on the information provided in \cite{Porras:2012:SEK:2342441.2342466}, as the reference implementation of FortNOX was never made public due to concerns about its viability and completeness.\footnote{We confirmed this in communication with FortNOX author Phil Porras.} A reference implementation of SE-Floodlight (secure Floodlight) by the same authors, has been proposed for release in summer 2013. While it is possible that SE-Floodlight will address our concerns, there is currently no implementation available on which to base more specific critiques.
+
+\subsection{Examining Packet Out}
+FortNOX focuses only examining and filtering out conflicting \emph{flow rules} from being inserted into switches. However, packet rewriting and manipulation is not limited to flow rules inserted into the switches themselves. Rules can be inserted that, when matched, forward the packet to the controller. This could happen because a new flow has arrived at a switch for which there is not yet a corresponding flow rule, or because an idle or hard timeout means that a previous flow rule has been discarded from the switch. At this point, a subversive application can arbitrarily rewrite a packet \emph{in the controller} in order to subvert rules, before sending it back to the switch to be forwarded. Even if another application in the controller installs a corresponding rule during the same session in the controller, the damage has already been done. 
+
+In order to defend against malicious flow subversion at the controller level, our implementation examines the actions of both attempted flow-table insertions, and of \texttt{PACKET\_OUT} events. That is, we examine outgoing packets to see if they conflict with any of our alias reduced rules in our in-memory mapping of allowed actions. This prevents malicious actions by applications both at the flow-rule level and the controller level.
+
+\subsection{Malicious Tunneling Across Switches}
+One of the more substantial issues with the FortNOX approach is that it only verifies that a candidate rule is not in conflict with the current ruleset of a \emph{single} switch's rules. Enforcement at the level of a single switch is suitible only to thwart the simplest attacks, such as the single-rule dynamic tunneling attack outlined in \ref{subsec:arr}. 
+
+However, when a Floodlight application can install rules into multiple switches and/or manipulate packets flowing through multiple switches, comparing new rule insertions with each switch ruleset in isolation is not sufficient to detect conflicts. Consider a simple extension to the dynamic tunneling attack, as follows:
