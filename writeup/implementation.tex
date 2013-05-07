@@ -1,0 +1,14 @@
+\section{Implementation}
+\label{sec:implementation}
+
+Floodlight-CD consists of two classes added to Floodlight's core and one application that runs on top of Floodlight.
+The conflict detection mechanisms get called by interposing on Floodlight's interal representation of OpenFlow switches.
+Since this is done in Floodlight's core, no alterations to current applications are needed.
+The detection class is invoked when an application calls a switch's \texttt{write} function.
+If a conflict is detected then the request is dropped and an error is logged for administrator review.
+Otherwise, the \texttt{OFPFF_SEND_FLOW_REM} flag is set to request that the switch inform the controller when the rule is removed from its flow table.
+
+The application listens for \texttt{FLOW_REMOVED} messages from switches and updates Floodlight-CD's internal view of the switch's flow table.
+This is in contrast to FortNOX, which keeps internal timers for all flow rules and manually deletes rules from switches upon timeout.
+By allowing the switch to inform the controller of a timeout, we alleviate the controller from extra work, especially for large flow tables, as well as obtain full benefit of idle timeouts.
+
