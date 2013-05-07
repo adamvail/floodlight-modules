@@ -1,0 +1,40 @@
+\section{Motivation}
+\label{sec:motivation}
+
+It is very difficult for an administrator to gain a full understanding of exactly what flow rules get inserted into a switch. 
+Applications can be custom made by groups within an enterprise or from some other third party.
+With many applications needing to be run on a network, it isn't realistic for an administrator to know every detail of every application that is being run.
+There is no guarantee that any two applications, especially when created by a third party, don't logically overwrite each other's rules by accident.
+OpenFlow 1.0 specifies that switches must have support to detect and send an error message when there is an attempt to install a flow rule that has the same or overlapping headers as a rule currently in the flow table.
+This is only done when the ADD request to install the rule has the \texttt{CHECK\_OVERLAP} flag set.
+Otherwise, unless the rules have exactly the same headers, the switch will allow the new rule to be installed "side-by-side" with the old rule.
+When packets come into the switch, they will take the action of the most specific rule that they can match in the flow table.
+If the two rules have exactly the same headers than the new rule will overwrite the old rule.
+
+% talk about how complicated it is for an admin to go from seeing something isn't working right in the network
+Flow rules are installed in switches dynamically and are dependent on the traffic flowing through the network.
+This can make it extremely difficult for an administrator to investigate undesirable behavior in their network.
+The difficulty is exacerbated by the fact that rules timeout on a frequently.
+By the time an administrator inspects the flow table of a switch, its state could already have already changed.
+
+Thus, it is extremely useful for an admistrator to know when two or more applications are installing rules which logically conflict with each other.
+Since all rules are written to the switches using the controller, it is the controller which has a world view of all the flow tables.
+This allows the controller to make the decision if a rule should be allowed to be written to a switch or disallowed and flagged for administrator attention.
+An administrator can debug unintended network behavior faster and resolve conflicts between separate applications.
+
+% Move on the an illustration of a malicious app, talk about the firewall application and how to subvert it, using Floodlight
+% in a large network, different groups may want to handle the traffic differently, this would be when they could get the ability to run their own app
+% use a campus network for example, each department wants to control its own traffic and have its own application to do it
+
+While unintentional misconfiguration of applications running on a controller are a definite possibility, there is also the case where an application author is being intentionally malicious.
+In order to illustrate this point we created a simple scenario with two conflicting applications.
+Figure {figure number} depicts our topology.
+While this is a somewhat contrived situationi (due to the limited number of hosts and simplicity of the applications), the ideas can be extended to larger, real world applications.
+
+Our first application acts like a simple "firewall" and installs a static rule in every switch to drop any traffic from \texttt{h1} to \texttt{h8} on port \texttt{80}.
+The second application subverts the static rule by dynamically remapping \texttt{h1}'s flow to be redirected towards \texttt{h8}.
+This is done by having \texttt{h1} send packets towards a dummy host that is connected to the same switch as \texttt{h8} using port \texttt{80} (the port number is arbitrary, it could be any high number port as long as the subversive application and the sender are in agreement).
+When \texttt{h8}'s switch sees packets destined for the dummy host it dynamically installs a rule to remap the destination of those packets to \texttt{h8} on port \texttt{80}.
+Since a flow can only match a single rule in a flow table, the switch remaps the packets' destination and forwards them on to \texttt{h8} without ever checking them against the firewall's static rule.
+As with network debugging, the controller has a complete view of network and is therefore in a position to arbitrate which rules should be installed on a switch and which should be disallowed due to logical conflicts with existing rules.
+

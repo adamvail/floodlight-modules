@@ -1,0 +1,144 @@
+\section{Design}
+\label{sec:design}
+
+We have extended the Floodlight OpenFlow controller to ensure two conflicting OpenFlow rules can not be present on a switch at the same time.
+Since Floodlight has a global view of the network it can make informed decisions concerning which rules an application is allowed to install on a switch and which rules should be disalowed.
+Much of our work for Floodlight was inspired by FortNOX \cite{Porras:2012:SEK:2342441.2342466}.
+FortNOX created a security enforcement kernel for the NOX OpenFlow controller \cite{Gude:2008:NTO:1384609.1384625} which did similar things to what we have created in Floodlight.
+Unfortunately, NOX is no longer under development and FortNOX was never released to the public.
+The need for functionality similar to FortNOX in a widely supported controller motivated us to extend Floodlight.
+We also discovered several shortcomings of FortNOX which we adressed in our Floodlight implementation.
+
+\subsection{Alias Reduced Rules}
+\label{subsec:arr}
+In order to detect rule conflicts, we borrowed the idea presented in FortNOX of representing OpenFlow messages as \emph{alias reduced rules} (ARR).
+An ARR is simply an expansion of a rule's match headers along with its actions.
+This allows the controller to see the full effect the rule will have on flows moving through the switch, effectively incorporating both the input (the match) and the output (the effect of the actions) of a given rule.
+Our Floodlight module then compares candidate-rule ARRs and outgoing packets against a table of these ARRs stored in our application to determine if there is a conflict between an active rule in the switch's flow table and a candidate rule that an application is attempting to install.
+If no conflict is found then the candidate rule is allowed to be written to the switch.
+To illustrate a malicious rule that would be targeted by our application, we present a simple example of what FortNOX calls ``dynamic-flow tunneling.'' Effectively, if one imagines a simple firewall implemented by a rule dropping all packets matching a given flow, a malicious application could insert a rule remapping that flow around the firewall rule, effectively circumventing it. 
+
+The firewall application installs a static flow rule upon switch connection that states:
+
+\begin{align}
+\begin{aligned}
+\label{eq:staticfirewall}
+(h1) \rightarrow (h8:80) \Rightarrow Action: drop 
+\end{aligned}
+\end{align}
+
+\begin{align}
+\begin{aligned}
+\label{eq:staticfirewall}
+(h1) \rightarrow (h8:80) \Rightarrow Action: drop 
+\end{aligned}
+\end{align}
+
+In the attack, the subversive application dynamically installs a flow rule that will effectively allow traffic from \texttt{h1} to be delivered to \texttt{h8} by remapping the destination of packets being sent from \texttt{h1} to some dummy host \texttt{h7} to instead be delivered to the destination of \texttt{h2:80}. Clearly, \texttt{h1} can effectively communicate with \texttt{h8} by sending its packets to \texttt{h7} instead.
+
+\begin{equation}\label{eq:subversive}
+(h1) \rightarrow (h7:80) \Rightarrow Action: set (dst = h8), (port = 80)
+\end{equation}
+
+\begin{align}
+\begin{aligned}
+\label{eq:subversive}
+&(h1) \rightarrow (h7:80) \Rightarrow  \\
+    &\qquad Action: set (dst = h8), (port = 80) 
+\end{aligned}
+\end{align}
+
+\begin{align}
+\begin{aligned}
+\label{eq:subversive}
+&(h1) \rightarrow (h7:80) \Rightarrow  \\
+    &\qquad Action: set (dst = h8), (port = 80) 
+\end{aligned}
+\end{align}
+
+The ARR for rule \ref{eq:staticfirewall} looks the same as the rule itself, combining its match with its actions.
+The ARR for rule \ref{eq:subversive} expands the rule into:
+
+\begin{equation}\label{eq:arrsubversive}
+(h1) \rightarrow \{(h7:80) (h8:80)\} \Rightarrow Action: forward
+\end{equation}
+
+The ARR for rule \ref{eq:staticfirewall} looks essentially the same as the rule itself.
+The ARR for rule \ref{eq:subversive} expands the rule into:
+
+\begin{align}
+\begin{aligned}
+\{(h1)\} \rightarrow \{(h7:80),&(h8:80)\} \Rightarrow \\ 
+     &\qquad Action: forward \nonumber
+\end{aligned}
+\end{align}
+
+\subsection{Detecting Conflict}
+\label{subsec:conflict}
+Floodlight maintains a per switch set of ARRs that correspond to active rules in the switch's flow table.
+When an application attempts to add a rule to the switch's flow table, Floodlight creates an ARR for the candidate rule (cARR) and does a pairwise check of the candidate ARR with every ARR representing active rules in the switch's flow table (fARR). A table of rules currently in the switch is maintained in our Floodlight module. Rule timeouts are registered by using the OpenFlow callback functionality, which registers an event with the controller upon timeout. %[TODO: elaborate]
+The conflict detection algorithm works as follows:
+\begin{enumerate}
+\item If the cARR and fARR have the same actions, then allow the candidate.
+\item If the cARR and fARR have any intersection in their source sets, then take the union of the two source sets.
+\item If the cARR and fARR have any intersection in their destination sets, then take the union of the two destination sets.
+\item If both unions result in non-empty sets, then there is a conflict. Otherwise, allow the candidate rule and add cARR to the switch's set of active ARRs.
+\end{enumerate} 
+
+As an example, consider the ARRs we created above where the static firewall rule is currently in the switch (fARR) and the subversive application's remapping rule is the candidate (cARR):
+
+\begin{enumerate}
+\item The two ARRs have different actions. \mbox{fARR = drop} and \mbox{cARR = forward}. Therefore we need to check the source and destination sets of the two ARRs.
+\item The two source sets intersect, therefore we take the union of the sets:
+\begin{align}
+\begin{aligned}
+\{(h1)\} \cup \{(h1)\} = (h1) \nonumber
+\end{aligned}
+\end{align}
+\item The destination sets intersect (h8:80), therefore we take the union of the sets:
+\begin{align}
+\begin{aligned}
+\{(h8:80)\} \cup \{(h7:80),&(h8:80)\} = \\
+        & \qquad \{(h7:80),(h8:80)\} \nonumber
+\end{aligned}
+\end{align}
+\end{enumerate} 
+
+This leaves the two sets non-empty, and Floodlight sees that these two rules are in conflict.
+In the case where a rule has wildcarded fields, the union includes the "widest" possible rule.
+For example, if the static firewall rule wanted to drop all traffic to \texttt{h8} regardless of destination port then the union of the destination sets would be:
+\begin{align}
+\begin{aligned}
+\{(h8)\} \cup \{(h7:80),(h8:80)\} =  \{(h7:80),(h8)\} \nonumber
+\end{aligned}
+\end{align}
+
+This still yields a non-empty set for both the source and destination sets and therefore is correctly identified as a conflict and disallowed.
+
+\subsection{Critiques of FortNOX and Implementation Challenges}
+\label{subsec:critique}
+In designing our implementation of alias reduced rules for rule conflict avoidance, we encountered a number of apparent shortcomings and blind spots in the FortNOX implementation that would still allow a subversive application to insert conflicting rules without detection. Our critiques, and the corresponding challenges are detailed below.
+
+Note that all of our critiques are based solely on the information provided in \cite{Porras:2012:SEK:2342441.2342466}, as the reference implementation of FortNOX was never made public due to concerns about its viability and completeness.\footnote{We confirmed this in communication with FortNOX author Phil Porras.} A reference implementation of SE-Floodlight (secure Floodlight) by the same authors, has been proposed for release in summer 2013. While it is possible that SE-Floodlight will address our concerns, there is currently no implementation available on which to base more specific critiques.
+
+\subsection{Examining Controller-Based Rule Evasion}
+FortNOX focuses only examining and filtering out conflicting \emph{flow rules} from being inserted into switches. However, packet rewriting and manipulation is not limited to flow rules inserted into the switches themselves. Rules can be inserted that, when matched, forward the packet to the controller. This could happen because a new flow has arrived at a switch for which there is not yet a corresponding flow rule, or because an idle or hard timeout means that a previous flow rule has been discarded from the switch. At this point, a subversive application can arbitrarily rewrite a packet \emph{in the controller} in order to subvert rules, before sending it back to the switch to be forwarded. Even if another application in the controller installs a corresponding rule during the same session in the controller, the damage has already been done. 
+
+In order to defend against malicious flow subversion at the controller level, our implementation examines the actions of both attempted flow-table insertions, and of \texttt{PACKET\_OUT} events. That is, we examine outgoing packets to see if they conflict with any of our alias reduced rules in our in-memory mapping of allowed actions. This prevents malicious actions by applications both at the flow-rule level and the controller level.
+
+\subsection{Malicious Tunneling Across Switches}
+One of the more substantial issues with the FortNOX approach is that it only verifies that a candidate rule is not in conflict with the current ruleset of a \emph{single} switch. Enforcement at the level of a single switch is sufficient only to thwart the simplest attacks, such as the single-rule dynamic tunneling attack outlined above in \ref{subsec:arr}. However, when a Floodlight application can install rules into multiple switches and/or manipulate packets flowing through multiple switches, installing a candidate ARR requires verifying that its installation would not create a flow that would subvert any existing flow restrictions throughout the network. In other words, to adequately protect the \emph{network}, enforcement must be considered on the level of the whole network, not just a single switch.
+
+Consider a simple extension to the dynamic tunneling attack, where the legitimate rule is once again $(h1) \RightArrow (h8:80): DROP$. Then the subversion rules we be as follows: 
+
+\begin{align}
+  Sw1: (h1) \Rightarrow (h6): set(src=h6, dest=h7) \\
+  Sw1: (h7) \Rightarrow (h6): set(src=h6, dest=h1) \\
+  Sw2: (h6) \Rightarrow (h7): set(dest=h8) \\
+  Sw2: (h8) \Rightarrow (h6): set(src=h7)
+\end{align}
+
+Assuming the malicious application installs each of these rules in turn, each is considered as a candidate ARR (cARR) and checked pairwise against existing rules according to the procedure described in Subsection \ref{subsec:conflict} above. Recall that the algorithm builds the union of source and destination rules and actions between the cARR and each fARR in the flow table, and detects a conflict if actions differ and the intersection of the sources and destinations of the ARRs are non-empty. In this case though, testing the insertion of the rules into Sw1 would yield a empty destination set since \texttt{h8} does not appear in the cARRs' destination sets. Similarly, \texttt{h1} does not appear in the cARRs' source sets for the rules inserted into Sw2, so they would be inserted successfully. 
+
+Our implementation follows that of FortNOX in blocking the insertion of conflicting rules on a single switch, but also does not implement conflict detection across a whole network. One approach is as follows. Instead of simply checking each cARR pairwise against each fARR \emph{only} for the target switch's alias ruleset and rejecting or accepting the cARR at that stage, the algorithm can continue to build a \emph{complete union set} (CUS) across the alias rulesets of all switches in a potential flow's forwarding path, taking into account the potential ramifications of the insertion of each candidate rule into each switch. At the end, we would reject a candidate rule if and only if the intersection of the CUS and fARR destination and source sets are both non-empty. 
+

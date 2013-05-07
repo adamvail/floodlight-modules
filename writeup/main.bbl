@@ -1,0 +1,49 @@
+\begin{thebibliography}{1}
+
+\bibitem{floodlight}
+Floodlight openflow controller.
+\newblock \url{http://www.projectfloodlight.com}.
+\newblock Accessed: 2013-02-26.
+
+\bibitem{Casado:2007:ETC:1282380.1282382}
+{\sc Casado, M., Freedman, M.~J., Pettit, J., Luo, J., McKeown, N., and
+  Shenker, S.}
+\newblock Ethane: taking control of the enterprise.
+\newblock In {\em Proceedings of the 2007 conference on Applications,
+  technologies, architectures, and protocols for computer communications\/}
+  (New York, NY, USA, 2007), SIGCOMM '07, ACM, pp.~1--12.
+
+\bibitem{Gude:2008:NTO:1384609.1384625}
+{\sc Gude, N., Koponen, T., Pettit, J., Pfaff, B., Casado, M., McKeown, N., and
+  Shenker, S.}
+\newblock Nox: towards an operating system for networks.
+\newblock {\em SIGCOMM Comput. Commun. Rev. 38}, 3 (July 2008), 105--110.
+
+\bibitem{McKeown:2008:OEI:1355734.1355746}
+{\sc McKeown, N., Anderson, T., Balakrishnan, H., Parulkar, G., Peterson, L.,
+  Rexford, J., Shenker, S., and Turner, J.}
+\newblock Openflow: enabling innovation in campus networks.
+\newblock {\em SIGCOMM Comput. Commun. Rev. 38}, 2 (Mar. 2008), 69--74.
+
+\bibitem{DBLP:conf/hotnets/PfaffPACKS09}
+{\sc Pfaff, B., Pettit, J., Amidon, K., Casado, M., Koponen, T., and Shenker,
+  S.}
+\newblock Extending networking into the virtualization layer.
+\newblock In {\em HotNets\/} (2009).
+
+\bibitem{Porras:2012:SEK:2342441.2342466}
+{\sc Porras, P., Shin, S., Yegneswaran, V., Fong, M., Tyson, M., and Gu, G.}
+\newblock A security enforcement kernel for openflow networks.
+\newblock In {\em Proceedings of the first workshop on Hot topics in software
+  defined networks\/} (New York, NY, USA, 2012), HotSDN '12, ACM, pp.~121--126.
+
+\bibitem{flowvisor}
+{\sc Sherwood, R., Gibb, G., Yap, K.-K., Appenzeller, G., Casado, M., McKeown,
+  N., and Parulkar, G.}
+\newblock Flowvisor: A network virtualization layer.
+\newblock
+  \url{http://www.openflow.org/downloads/technicalreports/openflow-tr-2009-1-f%
+lowvisor.pdf}, Oct. 2009.
+\newblock Accessed: 2013-04-28.
+
+\end{thebibliography}
