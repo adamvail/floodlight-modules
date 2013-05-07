@@ -91,9 +91,11 @@ public class Alias {
 			alias += t + " ";
 		}
 		
-		alias += "\n\nActions: ";
-		for(OFAction a : actions){
-			alias += a.getType().name() + " ";
+		if(actions != null){
+			alias += "\n\nActions: ";
+			for(OFAction a : actions){
+				alias += a.getType().name() + " ";
+			}
 		}
 		
 		return alias;

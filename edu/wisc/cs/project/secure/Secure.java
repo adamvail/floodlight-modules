@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import net.floodlightcontroller.core.OFSwitchBase;
 
@@ -30,7 +29,7 @@ import org.slf4j.LoggerFactory;
 
 public class Secure {
 	
-	protected static Logger logger = LoggerFactory.getLogger(Secure.class);
+	//protected static Logger logger = LoggerFactory.getLogger(Secure.class);
 	
 	private static Secure instance = null;
 	private ConcurrentHashMap<Long, Vector<Alias>> aliasSet = new ConcurrentHashMap<Long, Vector<Alias>>();
@@ -90,10 +89,10 @@ public class Secure {
 						// there were no empty sets, so there is a conflict
 						// Don't allow the rule to be written to the switch
 						
-						logger.debug("-------RULE REJECTED--------");
-						logger.debug("Refused switch = " + dpid + "\nRule Count: " + aliases.size());
-						logger.debug(cAlias.toString());
-						logger.debug(fAlias.toString());
+//						logger.debug("-------RULE REJECTED--------");
+//						logger.debug("Refused switch = " + dpid + "\nRule Count: " + aliases.size());
+						//logger.debug(cAlias.toString());
+						//logger.debug(fAlias.toString());
 						
 						return false;
 					}
@@ -101,11 +100,11 @@ public class Secure {
 			}
 		}
 		catch(ConcurrentModificationException e){
-			logger.debug("Concurrent Modification Exceptions");
+//			logger.debug("Concurrent Modification Exceptions");
 		}
 		
 		// No flow table conflicts, allow rule to be written
-		logger.debug("-----NO CONFLICTS, ALLOW RULE-------");
+//		logger.debug("-----NO CONFLICTS, ALLOW RULE-------");
 		
 		aliases.add(cAlias);
 		//putAliasSet(dpid, aliases);
@@ -143,9 +142,9 @@ public class Secure {
 						// then we can't consider them when deciding to refuse the packet for
 						// a handshake.
 		//				logger.debug("-------PACKET OUT REJECTED-------");
-						logger.debug("Refused packet = " + po);
-						logger.debug(cPO.toString());
-						logger.debug(fAlias.toString());
+						//logger.debug("Refused packet = " + po);
+						//logger.debug(cPO.toString());
+						//logger.debug(fAlias.toString());
 						packetRejected++;
 						return false;
 					}
@@ -153,9 +152,9 @@ public class Secure {
 							!sourceUnionEmpty && !destinationUnionEmpty){
 	//					logger.debug("-------PACKET OUT REJECTED-------");
 						
-						logger.debug("Refused packet = " + po);
-						logger.debug(cPO.toString());
-						logger.debug(fAlias.toString());
+						//logger.debug("Refused packet = " + po);
+						//logger.debug(cPO.toString());
+						//logger.debug(fAlias.toString());
 						packetRejected++;
 						return false;
 					}									
@@ -600,7 +599,7 @@ public class Secure {
 	
 	public void incrementRuleCount(){
 		this.rulesInstalled++;
-		logger.debug("Rule Count: " + this.rulesInstalled);
-		logger.debug("Packets Rejected: " + this.packetRejected);
+//		logger.debug("Rule Count: " + this.rulesInstalled);
+//		logger.debug("Packets Rejected: " + this.packetRejected);
 	}
 }
