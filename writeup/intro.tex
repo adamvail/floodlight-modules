@@ -19,7 +19,7 @@ The messages are stored in the switch's "flow table" which allows the switch to 
 We have extended the Floodlight OpenFlow controller \cite{floodlight} to incorporate security policy enforcement.
 Our implementation ensures that flow rules that exist within a switch are not violated.
 We detect if an application attempts to modify a switch's flow table with a conflicting rule and disallow it.
-We also force the controller to check all packet out trasmissions against the active flow rules in a switch to ensure the controller does not allow unintentional "routing around" of flow rules.
+We also force the controller to check all outgoing packets against the active flow rules in a switch to ensure the controller does not unintentionally allow a packet to be "routed around" an active flow rule.
 This prevents malicious applications from subverting security policy decisions put in place by network administrators.
 It also provides a useful debugging system which allows administrators to discover applications that exhibit conflicting behavior within their network.
 
