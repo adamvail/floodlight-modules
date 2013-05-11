@@ -1,0 +1,17 @@
+\section{Evaluation}
+\label{sec:evaluation}
+
+We stress tested Floodlight-CD using the \texttt{pingall} command provided by Mininet.
+This command goes through the host list and attempts to ping every other host in the topology.
+\texttt{Pingall} was chosen since it requires that a new rule be written to the switch for both the request and reply of the majority of pings.
+The only time a new rule is not written is if the rule already exists from a previous ping, i.e. when \texttt{h2} is pinging \texttt{h1} while the flow rules from \texttt{h1} pinging \texttt{h2} is still resident in the switch's flow table.
+All flow rules in our tests were set with a 1 second hard timeout (the shortest Floodlight allows) to necessitate the writing of as many flows as possible to the switches.
+This places a large load on Floodlight-CD to validate each rule as well as keep an up to date view of the switches' flow tables.
+Since the installation of each dynamic rule is triggered by a packet being forwarded to the controller, the packets themselves must also be checked before getting written out to the switch.
+Therefore, for every ping, the forward rule, the reverse rule, the request packet, and the response packet must be checked for the ping to succeed.
+
+The tests were done with varying numbers of switches and hosts.
+We timed how long it took to ping 
+ 
+The results are shown in figure %TODO figure reference here
+
