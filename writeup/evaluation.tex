@@ -8,10 +8,20 @@ The only time a new rule is not written is if the rule already exists from a pre
 All flow rules in our tests were set with a 1 second hard timeout (the shortest Floodlight allows) to necessitate the writing of as many flows as possible to the switches.
 This places a large load on Floodlight-CD to validate each rule as well as keep an up to date view of the switches' flow tables.
 Since the installation of each dynamic rule is triggered by a packet being forwarded to the controller, the packets themselves must also be checked before getting written out to the switch.
-Therefore, for every ping, the forward rule, the reverse rule, the request packet, and the response packet must be checked for the ping to succeed.
+Therefore, for every ping, the forward rule, the reverse rule, the request packet, and the response packet must be checked per switch for the ping to succeed.
 
 The tests were done with varying numbers of switches and hosts.
-We timed how long it took to ping 
- 
-The results are shown in figure %TODO figure reference here
+Figure ? shows the timing data for a single switch. %TODO figure reference here
+The addition of confliction detection results in a consistent overhead of about 15\%, regardless of the number of hosts.
+
+Figure ? shows the timing data for topologies with multiple switches.
+All of these tests were run using the tree topology where the number of levels of the tree were varied.
+Each leaf switch had two hosts connected to it.
+We found these tests to truly exercise Floodlight-CD due to the number of switches which involved in a single ping between hosts on opposite sides of the tree.
+When a host pings a destination on the other side of the tree, the forward and reverse rules must be checked and installed on (2*L) - 1 switches, where L is the number of levels of the tree. 
+The overhead incurred by conflict detection in a multi-switch scenario varied from 9\% up to 16\%.
+
+While an overhead of about 15\% for all scenarios is not terrible, we believe that this could be reduced.
+We spent a large amount of time working through concurrency issues within Java.
+We believe that our implementation can be optimized to increase the performance of Floodlight-CD.
 
