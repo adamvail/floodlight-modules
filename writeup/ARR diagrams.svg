@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="744.09448819"
+   height="1052.3622047"
+   id="svg4650"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="New document 9">
+  <defs
+     id="defs4652" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.4"
+     inkscape:cx="227.95269"
+     inkscape:cy="767.57044"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1920"
+     inkscape:window-height="1005"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata4655">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="52.723774"
+       y="111.03998"
+       id="text4658"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="52.723774"
+         y="111.03998"
+         style="font-size:20px"
+         id="tspan4664">Firewall Rule:</tspan><tspan
+         sodipodi:role="line"
+         x="52.723774"
+         y="136.03998"
+         style="font-size:20px;font-weight:bold"
+         id="tspan4668">Match           Action</tspan><tspan
+         sodipodi:role="line"
+         x="52.723774"
+         y="161.03998"
+         style="font-size:20px"
+         id="tspan4662">h1 -&gt; h8        DROP</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="391.42856"
+       y="112.00505"
+       id="text4670"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4672"
+         x="391.42856"
+         y="112.00505"
+         style="font-size:20px">Firewall ARR:</tspan><tspan
+         sodipodi:role="line"
+         x="391.42856"
+         y="137.00505"
+         style="font-size:20px;font-weight:bold"
+         id="tspan4674">SRC          DST           Action</tspan><tspan
+         sodipodi:role="line"
+         x="391.42856"
+         y="162.00505"
+         style="font-size:20px"
+         id="tspan4676">{h1}           {h8}            DROP</tspan></text>
+    <rect
+       style="fill:#ff0000;fill-opacity:0.38655461;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect5222"
+       width="295"
+       height="90.714287"
+       x="42.14286"
+       y="185.21933" />
+    <text
+       xml:space="preserve"
+       style="font-size:20px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="48.571419"
+       y="209.50504"
+       id="text4682"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4684"
+         x="48.571419"
+         y="209.50504">Subversive Rule:</tspan><tspan
+         sodipodi:role="line"
+         x="48.571419"
+         y="234.50504"
+         id="tspan4686"
+         style="font-weight:bold">Match          Action</tspan><tspan
+         sodipodi:role="line"
+         x="48.571419"
+         y="259.50504"
+         id="tspan4688">h1 -&gt; h7       set(dst=h8), FWD</tspan></text>
+    <rect
+       style="fill:#ff0000;fill-opacity:0.38655461000000002;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect5222-5"
+       width="295"
+       height="90.714287"
+       x="376.78571"
+       y="186.29076" />
+    <text
+       xml:space="preserve"
+       style="font-size:20px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="392.85715"
+       y="210.21931"
+       id="text4690"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4692"
+         x="392.85715"
+         y="210.21931">Subversive ARR</tspan><tspan
+         sodipodi:role="line"
+         x="392.85715"
+         y="235.21931"
+         id="tspan4694"
+         style="font-weight:bold">SRC          DST            Action</tspan><tspan
+         sodipodi:role="line"
+         x="392.85715"
+         y="260.2193"
+         id="tspan4696">{h1}           {h7, h8}       FWD</tspan></text>
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot4698"
+       style="fill:black;stroke:#000000;stroke-opacity:1;stroke-width:1px;stroke-linejoin:miter;stroke-linecap:butt;fill-opacity:1;font-family:Sans;font-style:normal;font-weight:normal;font-size:20px;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr"><flowRegion
+         id="flowRegion4700"><rect
+           id="rect4702"
+           width="295.71429"
+           height="89.285713"
+           x="42.142857"
+           y="188.79076"
+           style="stroke:#000000;stroke-opacity:1" /></flowRegion><flowPara
+         id="flowPara4704"></flowPara></flowRoot>    <flowRoot
+       xml:space="preserve"
+       id="flowRoot5214"
+       style="fill:black;stroke:none;stroke-opacity:1;stroke-width:1px;stroke-linejoin:miter;stroke-linecap:butt;fill-opacity:1;font-family:Sans;font-style:normal;font-weight:normal;font-size:20px;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr"><flowRegion
+         id="flowRegion5216"><rect
+           id="rect5218"
+           width="298.57144"
+           height="87.14286"
+           x="40"
+           y="190.21933" /></flowRegion><flowPara
+         id="flowPara5220"></flowPara></flowRoot>    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 37.142857,175.93361 642.857143,0"
+       id="path5242"
+       inkscape:connector-curvature="0" />
+    <text
+       xml:space="preserve"
+       style="font-size:20px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#000000;fill-opacity:1;stroke:none;font-family:Mathematica1;-inkscape-font-specification:Mathematica1"
+       x="394.28571"
+       y="317.36218"
+       id="text5244"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan5246"
+         x="394.28571"
+         y="317.36218">SRC Union Set:</tspan><tspan
+         sodipodi:role="line"
+         x="394.28571"
+         y="342.36218"
+         id="tspan5258">              {h1} U {h1} = {h1}                                                  </tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:20px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="394.28574"
+       y="393.07645"
+       id="text5262"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan5264"
+         x="394.28574"
+         y="393.07645">DST Union Set:</tspan><tspan
+         sodipodi:role="line"
+         x="394.28574"
+         y="418.07645"
+         id="tspan5266">              {h8} U {h7, h8} = {h7, h8}</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:20px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="392.85715"
+       y="468.79074"
+       id="text5268"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="392.85715"
+         y="468.79074"
+         id="tspan5272">SRC Union Set is nonempty, and </tspan><tspan
+         sodipodi:role="line"
+         x="392.85715"
+         y="493.79074"
+         id="tspan5276">DST Union Set is nonempty:</tspan><tspan
+         sodipodi:role="line"
+         x="392.85715"
+         y="518.79077"
+         id="tspan5278"
+         style="font-weight:bold;fill:#ff0000">              =&gt;  CONFLICT</tspan></text>
+    <rect
+       style="fill:#ff0000;fill-opacity:0;stroke:#000000;stroke-width:0.98189151;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect5284"
+       width="337.16095"
+       height="248.58954"
+       x="379.27664"
+       y="291.63882" />
+  </g>
+</svg>
