@@ -7,6 +7,7 @@ import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import net.floodlightcontroller.packet.Ethernet;
+import net.floodlightcontroller.packet.IPv4;
 
 import org.openflow.protocol.OFFlowMod;
 import org.openflow.protocol.OFMatch;
@@ -54,11 +55,57 @@ public class Alias {
 	private byte networkProtocol = -1;
 	
 	//private Vector<OFAction> actions = new Vector<OFAction>();
-	private CopyOnWriteArrayList<OFAction> actions = new CopyOnWriteArrayList<OFAction>();
+	private Vector<OFAction> actions = null;
+	
+	@Override
+	public String toString(){
+		String alias = "";
+		
+		alias += "Datalayer Sources: ";
+		for(byte[] b : dataLayerSource){
+			alias += b.toString() + " ";
+		}
+		
+		alias += "\n\nDatalayer Destinations: ";
+		for(byte [] b : dataLayerDestination){
+			alias += b.toString() + " ";
+		}
+		
+		alias += "\n\nNetwork Sources: ";
+		for(Integer n : networkSource){
+			alias += IPv4.fromIPv4Address(n) + " ";
+		}
+		
+		alias += "\n\nNetwork Destinations: ";
+		for(Integer n : networkDestination){
+			alias += IPv4.fromIPv4Address(n) + " ";
+		}
+		
+		alias += "\n\nTransport Sources: ";
+		for(short t : transportSource){
+			alias += t + " ";
+		}
+		
+		alias += "\n\nTransport Destination: ";
+		for(short t : transportDestination){
+			alias += t + " ";
+		}
+		
+		if(actions != null){
+			alias += "\n\nActions: ";
+			for(OFAction a : actions){
+				alias += a.getType().name() + " ";
+			}
+		}
+		
+		return alias;
+	}
 	
 	public Alias(OFFlowMod rule){
 		// need to check for failures adding to the set	
 		if(rule.getActions() != null){
+			this.actions = new Vector<OFAction>(rule.getActions());
+			/*
 			if(rule.getActions() != null){
 				for(OFAction action : rule.getActions()){
 					try {
@@ -68,7 +115,7 @@ public class Alias {
 						e.printStackTrace();
 					}
 				}
-			}
+			}*/
 		}
 	//	logger.debug("Match: " + rule.getMatch());
 		
@@ -90,7 +137,7 @@ public class Alias {
 	public Alias(OFPacketOut po){
 		
 		if(po.getActions() != null){
-			for(OFAction action : po.getActions()){
+			/*for(OFAction action : po.getActions()){
 				try {
 					this.actions.add(action.clone());
 				} catch (CloneNotSupportedException e) {
@@ -98,6 +145,8 @@ public class Alias {
 					e.printStackTrace();
 				}
 			}
+			*/
+			this.actions = new Vector<OFAction>(po.getActions());
 		}
 				
 		OFMatch match = new OFMatch();
@@ -197,6 +246,7 @@ public class Alias {
 	
 	private void loadActions(List<OFAction> actions){
 		if(actions == null){
+			logger.debug("\n\nACTIONS ARE NULL, THIS IS A DROP ACTION");
 			return;
 		}
 		for(OFAction action : actions){
@@ -235,11 +285,14 @@ public class Alias {
 					break;
 				case VENDOR:
 					break;
+				default:
+					logger.debug("ACTIONS: NO MATCH WHEN LOADING ACTION");
+					break;
 			}
 		}
 	}
 		
-	public CopyOnWriteArrayList<OFAction> getActions(){
+	public Vector<OFAction> getActions(){
 		return actions;
 	}
 	
@@ -395,4 +448,6 @@ public class Alias {
 		// passed all the checks
 		return true;
 	}
+	
+
 }

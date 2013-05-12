@@ -68,7 +68,7 @@ The ARR for rule \ref{eq:subversive} expands the rule into:
 
 \begin{align}
 \begin{aligned}
-(h1) \rightarrow (h7:80)&(h8:80) \Rightarrow \\ 
+\{(h1)\} \rightarrow \{(h7:80),&(h8:80)\} \Rightarrow \\ 
      &\qquad Action: forward \nonumber
 \end{aligned}
 \end{align}
@@ -92,27 +92,28 @@ As an example, consider the ARRs we created above where the static firewall rule
 \item The two source sets intersect, therefore we take the union of the sets:
 \begin{align}
 \begin{aligned}
-(h1) \cap (h1) = (h1) \nonumber
+\{(h1)\} \cup \{(h1)\} = (h1) \nonumber
 \end{aligned}
 \end{align}
 \item The destination sets intersect (h8:80), therefore we take the union of the sets:
 \begin{align}
 \begin{aligned}
-(h8:80) \cap (h7:80)&(h8:80) = \\
-        & \qquad (h7:80) (h8:80) \nonumber
+\{(h8:80)\} \cup \{(h7:80),&(h8:80)\} = \\
+        & \qquad \{(h7:80),(h8:80)\} \nonumber
 \end{aligned}
 \end{align}
 \end{enumerate} 
 
 This leaves the two sets non-empty, and Floodlight sees that these two rules are in conflict.
 In the case where a rule has wildcarded fields, the union includes the "widest" possible rule.
-For example, if the static firewall rule wanted to drop all traffic to \texttt{h8} regardless of destination port then the union would be:
+For example, if the static firewall rule wanted to drop all traffic to \texttt{h8} regardless of destination port then the union of the destination sets would be:
 \begin{align}
 \begin{aligned}
-(h8) \cap (h7:80) (h8:80) =  (h7:80) (h8) \nonumber
+\{(h8)\} \cup \{(h7:80),(h8:80)\} =  \{(h7:80),(h8)\} \nonumber
 \end{aligned}
 \end{align}
 
+This still yields a non-empty set for both the source and destination sets and therefore is correctly identified as a conflict and disallowed.
 
 \subsection{Critiques of FortNOX and Implementation Challenges}
 \label{subsec:critique}
