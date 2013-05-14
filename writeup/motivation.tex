@@ -36,9 +36,9 @@ Figure {figure number} depicts our exmaple topology.
 While this is a somewhat contrived situation (due to the limited number of hosts and simplicity of the applications), the ideas can be extended to larger, real world applications.
 
 The first application acts like a simple "firewall" and installs a static rule in every switch to drop any traffic from \texttt{h1} to \texttt{h8} on port \texttt{80}.
-The second application subverts the static rule by dynamically remapping \texttt{h1}'s flow to be redirected towards \texttt{h8}.
-This is done by having \texttt{h1} send packets towards a dummy host that is connected to the same switch as \texttt{h8} using port \texttt{80} (the port number is arbitrary, it could be any high number port as long as the subversive application and the sender are in agreement).
-When \texttt{h8}'s switch sees packets destined for the dummy host it dynamically installs a rule to remap the destination of those packets to \texttt{h8} on port \texttt{80}.
-Since a flow can only match a single rule in a flow table, the switch remaps the packets' destination and forwards them on to \texttt{h8} without ever checking them against the firewall's static rule.
-As with network debugging, the controller has a complete view of network and is therefore in a position to arbitrate which rules should be installed on a switch and which should be disallowed due to logical conflicts with existing rules.
+The second application subverts the static rule by dynamically remapping \texttt{h1}'s flow to be redirected from \texttt{h7} towards \texttt{h8}.
+This is done by having \texttt{h1} send packets towards a dummy host using port \texttt{80} (the port number is arbitrary, it could be any high number port as long as the subversive application and the sender are in agreement).
+When the switch sees packets destined for the dummy host it dynamically installs a rule to remap the destination of those packets from \texttt{h7} to \texttt{h8} on port \texttt{80}.
+Since a flow can only match a single rule in a flow table, once the switch remaps the packets' destination, it forwards them on to \texttt{h8} without ever checking them against the firewall's static rule.
+As with network debugging, the controller has a complete view of network and is therefore in a position to arbitrate which rules should be disallowed due to logical conflicts with existing rules.
 
