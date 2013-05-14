@@ -6,7 +6,7 @@ Applications can be custom made by groups within an enterprise or from some othe
 With many applications needing to be run on a network, it isn't realistic for an administrator to know every detail of every application that is being run.
 There is no guarantee that any two applications, especially when created by a third party, don't logically overwrite each other's rules by accident.
 OpenFlow 1.0 specifies that switches must have support to detect and send an error message when there is an attempt to install a flow rule that has the same or overlapping headers as a rule currently in the flow table.
-This is only done when the ADD request to install the rule has the \texttt{CHECK\_OVERLAP} flag set.
+This is only done when the \texttt{ADD} request to install the rule has the \texttt{CHECK\_OVERLAP} flag set.
 Otherwise, unless the rules have exactly the same headers, the switch will allow the new rule to be installed "side-by-side" with the old rule.
 When packets come into the switch, they will take the action of the most specific rule that they can match in the flow table.
 If the two rules have exactly the same headers than the new rule will overwrite the old rule.
