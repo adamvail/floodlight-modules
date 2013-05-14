@@ -27,11 +27,15 @@ An administrator can debug unintended network behavior faster and resolve confli
 % use a campus network for example, each department wants to control its own traffic and have its own application to do it
 
 While unintentional misconfiguration of applications running on a controller are a definite possibility, there is also the case where an application author is being intentionally malicious.
-In order to illustrate this point we created a simple scenario with two conflicting applications.
+We discuss one such malicious scenario next.
+
+\subsection{Dynamic Flow Tunneling}
+% Need more info about dft
+As an illustration, we created a simple scenario with two conflicting applications.
 Figure {figure number} depicts our topology.
 While this is a somewhat contrived situationi (due to the limited number of hosts and simplicity of the applications), the ideas can be extended to larger, real world applications.
 
-Our first application acts like a simple "firewall" and installs a static rule in every switch to drop any traffic from \texttt{h1} to \texttt{h8} on port \texttt{80}.
+The first application acts like a simple "firewall" and installs a static rule in every switch to drop any traffic from \texttt{h1} to \texttt{h8} on port \texttt{80}.
 The second application subverts the static rule by dynamically remapping \texttt{h1}'s flow to be redirected towards \texttt{h8}.
 This is done by having \texttt{h1} send packets towards a dummy host that is connected to the same switch as \texttt{h8} using port \texttt{80} (the port number is arbitrary, it could be any high number port as long as the subversive application and the sender are in agreement).
 When \texttt{h8}'s switch sees packets destined for the dummy host it dynamically installs a rule to remap the destination of those packets to \texttt{h8} on port \texttt{80}.
