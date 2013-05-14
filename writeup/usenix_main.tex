@@ -21,7 +21,11 @@
 
 % This version uses the latex2e styles, not the very ancient 2.09 stuff.
 \documentclass[letterpaper,twocolumn,10pt]{article}
-\usepackage{usenix,epsfig,endnotes}
+\usepackage{usenix,epsfig,endnotes,amsmath}
+\usepackage{alltt}
+\usepackage{url}
+%\usepackage[dvips]{graphicx}
+
 \begin{document}
 
 %don't want date printed
@@ -68,8 +72,8 @@ Floodlight-CD successfully prevents both single-switch dynamic tunneling and con
 %\input{conclusion} 
 
 
-%{\footnotesize \bibliographystyle{acm}
-%\bibliography{../common/bibliography}}
+{\footnotesize \bibliographystyle{acm}
+\bibliography{references}}
 
 
 %\theendnotes

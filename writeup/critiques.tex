@@ -12,7 +12,7 @@ In order to defend against malicious flow subversion at the controller level, ou
 \subsection{Malicious Tunneling Across Switches}
 One of the more substantial issues with the FortNOX approach is that it only verifies that a candidate rule is not in conflict with the current ruleset of a \emph{single} switch. Enforcement at the level of a single switch is sufficient only to thwart the simplest attacks, such as the single-rule dynamic tunneling attack outlined above in \ref{subsec:arr}. However, when a Floodlight application can install rules into multiple switches and/or manipulate packets flowing through multiple switches, installing a candidate ARR requires verifying that its installation would not create a flow that would subvert any existing flow restrictions throughout the network. In other words, to adequately protect the \emph{network}, enforcement must be considered on the level of the whole network, not just a single switch.
 
-Consider a simple extension to the dynamic tunneling attack, where the legitimate rule is once again $(h1) \RightArrow (h8:80): DROP$. Then the subversion rules we be as follows: 
+Consider a simple extension to the dynamic tunneling attack, where the legitimate rule is once again $(h1) \Rightarrow (h8:80): DROP$. Then the subversion rules we be as follows: 
 
 \begin{align}
   Sw1: (h1) \Rightarrow (h6): set(src=h6, dest=h7) \\
