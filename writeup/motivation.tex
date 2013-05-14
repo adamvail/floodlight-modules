@@ -31,9 +31,9 @@ We discuss one such malicious scenario next.
 
 \subsection{Dynamic Flow Tunneling}
 % Need more info about dft
-As an illustration, we created a simple scenario with two conflicting applications.
-Figure {figure number} depicts our topology.
-While this is a somewhat contrived situationi (due to the limited number of hosts and simplicity of the applications), the ideas can be extended to larger, real world applications.
+As an illustration, we created a simple scenario of dynamic flow tunneling where a malicous application effectively bypasses a firewall rule to drop traffic between two hosts.
+Figure {figure number} depicts our exmaple topology.
+While this is a somewhat contrived situation (due to the limited number of hosts and simplicity of the applications), the ideas can be extended to larger, real world applications.
 
 The first application acts like a simple "firewall" and installs a static rule in every switch to drop any traffic from \texttt{h1} to \texttt{h8} on port \texttt{80}.
 The second application subverts the static rule by dynamically remapping \texttt{h1}'s flow to be redirected towards \texttt{h8}.
