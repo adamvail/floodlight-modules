@@ -14,7 +14,10 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.48.4 r9939"
-   sodipodi:docname="multiSwitch_diagram.svg">
+   sodipodi:docname="multiSwitch_diagram.svg"
+   inkscape:export-filename="C:\Users\rdj\Documents\GitHub\floodlight-modules\writeup\multiSwitch_diagram.png"
+   inkscape:export-xdpi="153.74001"
+   inkscape:export-ydpi="153.74001">
   <defs
      id="defs4" />
   <sodipodi:namedview
@@ -24,16 +27,16 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="2.8"
-     inkscape:cx="496.11498"
-     inkscape:cy="906.19637"
+     inkscape:zoom="1.4"
+     inkscape:cx="471.9014"
+     inkscape:cy="846.42399"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:window-width="1002"
      inkscape:window-height="815"
-     inkscape:window-x="120"
-     inkscape:window-y="120"
+     inkscape:window-x="121"
+     inkscape:window-y="121"
      inkscape:window-maximized="0" />
   <metadata
      id="metadata7">
@@ -250,12 +253,12 @@
          x="527.7337"
          y="111.41331">dst: 8</tspan></text>
     <rect
-       style="fill:#cccccc;fill-opacity:0.38655461;stroke:#000000;stroke-width:0.95112282;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       style="fill:#cccccc;fill-opacity:0.38655461;stroke:#000000;stroke-width:1.03375828;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="rect3970"
-       width="174.73459"
-       height="81.163162"
-       x="151.91843"
-       y="236.42345" />
+       width="182.50909"
+       height="91.794815"
+       x="151.95975"
+       y="236.46477" />
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
@@ -266,26 +269,34 @@
          sodipodi:role="line"
          id="tspan3944"
          x="162.66435"
-         y="256.64789">             sw1 Rules:</tspan><tspan
+         y="256.64789"
+         style="font-weight:bold">             sw1 Rules:</tspan><tspan
          sodipodi:role="line"
          x="162.66435"
-         y="271.64786"
+         y="271.64789"
          id="tspan3958" /><tspan
          sodipodi:role="line"
          x="162.66435"
-         y="286.64786"
-         id="tspan3946">Match         Action</tspan><tspan
+         y="286.64789"
+         id="tspan3946"
+         style="font-weight:bold">Match         Action</tspan><tspan
          sodipodi:role="line"
          x="162.66435"
-         y="301.64786"
-         id="tspan3956">1-&gt;6            set(src=6, dst=7)</tspan></text>
+         y="301.64789"
+         style="font-weight:normal"
+         id="tspan4088">1-&gt;8            DROP</tspan><tspan
+         sodipodi:role="line"
+         x="162.66435"
+         y="316.64789"
+         id="tspan3956"
+         style="font-weight:bold;fill:#ff0000">1-&gt;6            set(src=6, dst=7)</tspan></text>
     <rect
-       style="fill:#cccccc;fill-opacity:0.38655461;stroke:#000000;stroke-width:0.8955043;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       style="fill:#cccccc;fill-opacity:0.38655461;stroke:#000000;stroke-width:0.96897781;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="rect3970-2"
-       width="154.79022"
-       height="81.218788"
-       x="414.74774"
-       y="237.10992" />
+       width="159.00246"
+       height="92.573891"
+       x="414.78448"
+       y="237.14665" />
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
@@ -296,7 +307,8 @@
          sodipodi:role="line"
          id="tspan3962"
          x="428.57141"
-         y="255.93361">           sw2 Rules:</tspan><tspan
+         y="255.93361"
+         style="font-weight:bold">           sw2 Rules:</tspan><tspan
          sodipodi:role="line"
          x="428.57141"
          y="270.93359"
@@ -304,11 +316,18 @@
          sodipodi:role="line"
          x="428.57141"
          y="285.93359"
-         id="tspan3966">Match            Action</tspan><tspan
+         id="tspan3966"
+         style="font-weight:bold">Match            Action</tspan><tspan
          sodipodi:role="line"
          x="428.57141"
          y="300.93359"
-         id="tspan3968">6-&gt;7               set(dst=8)</tspan></text>
+         style="font-weight:normal"
+         id="tspan4090">1-&gt;8               DROP</tspan><tspan
+         sodipodi:role="line"
+         x="428.57141"
+         y="315.93359"
+         id="tspan3968"
+         style="fill:#ff0000;font-weight:bold">6-&gt;7               set(dst=8)</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:4,1;stroke-dashoffset:0"
        d="m 471.42857,208.07647 c 10,27.14285 10,27.14285 10,27.14285"
@@ -382,5 +401,54 @@
          id="tspan4033-6"
          x="510.71429"
          y="68.433609">3</tspan></text>
+    <path
+       transform="translate(253.21429,130.35714)"
+       sodipodi:type="arc"
+       style="fill:#2baa2a;fill-opacity:0.38655461000000002;stroke:#000000;stroke-width:1.4;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:4.2,4.2;stroke-dashoffset:0"
+       id="path3825-1"
+       sodipodi:cx="121.07143"
+       sodipodi:cy="84.147896"
+       sodipodi:rx="23.928572"
+       sodipodi:ry="23.928572"
+       d="m 145,84.147896 a 23.928572,23.928572 0 1 1 -47.857145,0 23.928572,23.928572 0 1 1 47.857145,0 z" />
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="361.78574"
+       y="221.29076"
+       id="text3827-7"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3829-1"
+         x="361.78574"
+         y="221.29076"
+         style="font-size:22px">h6</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:4,4;stroke-dashoffset:0"
+       d="m 328.92857,206.64789 20.51133,5.496"
+       id="path4624"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:4, 4;stroke-dashoffset:0"
+       d="m 416.68424,207.47132 -20.51133,5.496"
+       id="path4624-1"
+       inkscape:connector-curvature="0" />
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="373.44965"
+       y="249.50504"
+       id="text4644"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4646"
+         x="373.44965"
+         y="249.50504"
+         style="text-align:center;text-anchor:middle">Dummy</tspan><tspan
+         sodipodi:role="line"
+         x="373.44965"
+         y="264.50504"
+         id="tspan4648"
+         style="text-align:center;text-anchor:middle">host</tspan></text>
   </g>
 </svg>
