@@ -3,23 +3,24 @@
 
 In recent years the advent of software defined networking (SDN) has introduced a major disruption into the networking space.
 Traditional networks employ vast amounts of hardware that all need to be configured and managed manually by teams of trained professionals.
-Manual interaction with so many different pieces of hardware causes the network to be suceptible to costly human-errors. 
+Manual interaction with so many different pieces of hardware causes the network to be susceptible to costly human-errors. 
 The need for a scalable network configuration and management system has led to SDN's rapid rise in popularity.
 SDN implementations today require switches that can take direction from a centralized controller.
 These switches can be software based, such as Open vSwitch \cite{DBLP:conf/hotnets/PfaffPACKS09}, or hardware switches which offer traditional and SDN modes of operation.
 Switches deployed today for use in a software defined network generally communicate to the controller using the OpenFlow protocol.
 
-OpenFlow \cite{McKeown:2008:OEI:1355734.1355746} is a standardized protocol that facilitates coordination between the data plane, which resides in the switch, and the control plane, which resides in controller.
+OpenFlow \cite{McKeown:2008:OEI:1355734.1355746} is a standardized protocol that facilitates coordination between the data plane, which resides in the switch, and the control plane, which resides in the controller.
 The controller makes high level decisions, such as routing, dropping a packet, or forwarding a packet, and communicates these decisions using OpenFlow messages.
-The messages are stored in the switch's "flow table" which allows the switch to handle packets without repeatedly involving the controller. 
+The messages are stored in the switch's ``flow table'' which allows the switch to handle packets without repeatedly involving the controller. 
 
 % something more about controllers and not being designed with security in mind
 % there are other ways of offering security such as flowvisor, but that isn't really manageable at large scale and doesn't offer security within the slice
 
 We have extended the Floodlight OpenFlow controller \cite{floodlight} to incorporate security policy enforcement.
-Our implementation ensures that flow rules that exist within a switch are not violated.
+We use alias reduced rule sets to ensure that flow rules that exist within a switch are not violated.
 We detect if an application attempts to modify a switch's flow table with a conflicting rule and disallow it.
-We also force the controller to check all packet out trasmissions against the active flow rules in a switch to ensure the controller does not allow unintentional "routing around" of flow rules.
+We also protect against controller based rule evasion by forcing the controller to check all outgoing packets against the active flow rules in a switch to ensure the controller does not unintentionally allow a packet to be ``routed around'' an active flow rule.
 This prevents malicious applications from subverting security policy decisions put in place by network administrators.
 It also provides a useful debugging system which allows administrators to discover applications that exhibit conflicting behavior within their network.
+Our implementation of conflict detection, Floodlight-CD, secures the Floodlight controller against rule subversion while incurring a 15\% overhead compared to Floodlight as it stands today. 
 

@@ -2,9 +2,9 @@ package edu.wisc.cs.project.secure;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ConcurrentModificationException;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import net.floodlightcontroller.core.OFSwitchBase;
 
@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 
 public class Secure {
 	
-	protected static Logger logger = LoggerFactory.getLogger(Secure.class);
+	//protected static Logger logger = LoggerFactory.getLogger(Secure.class);
 	
 	private static Secure instance = null;
 	private ConcurrentHashMap<Long, Vector<Alias>> aliasSet = new ConcurrentHashMap<Long, Vector<Alias>>();
@@ -73,30 +73,38 @@ public class Secure {
 				
 		Alias cAlias = new Alias(cRule);
 		
-		for(Alias fAlias : aliases){
-			// pairwise comparison of current flow table rules
-			// with the candidate rule
-						
-			// If the actions are them same then allow, move on to the next rule in the flow table
-			if(checkActions(cAlias.getActions(), fAlias.getActions()) == false){
-				// Actions weren't the same, so need to check the inside of the rule
-				boolean sourceUnionEmpty = checkAliasSources(cAlias, fAlias);
-				boolean destinationUnionEmpty = checkAliasDestinations(cAlias, fAlias);
-				
-				if(checkDataLayerType(cAlias, fAlias) && checkNetworkProtocol(cAlias, fAlias) &&
-						!sourceUnionEmpty && !destinationUnionEmpty){				
-					// there were no empty sets, so there is a conflict
-					// Don't allow the rule to be written to the switch
+		try{
+			for(Alias fAlias : aliases){
+				// pairwise comparison of current flow table rules
+				// with the candidate rule
+							
+				// If the actions are them same then allow, move on to the next rule in the flow table
+				if(checkActions(cAlias.getActions(), fAlias.getActions()) == false){
+					// Actions weren't the same, so need to check the inside of the rule
+					boolean sourceUnionEmpty = checkAliasSources(cAlias, fAlias);
+					boolean destinationUnionEmpty = checkAliasDestinations(cAlias, fAlias);
 					
-					logger.debug("-------RULE REJECTED--------");
-					logger.debug("Refused switch = " + dpid + "\nRule Count: " + aliases.size());
-					return false;
+					if(checkDataLayerType(cAlias, fAlias) && checkNetworkProtocol(cAlias, fAlias) &&
+							!sourceUnionEmpty && !destinationUnionEmpty){				
+						// there were no empty sets, so there is a conflict
+						// Don't allow the rule to be written to the switch
+						
+//						logger.debug("-------RULE REJECTED--------");
+//						logger.debug("Refused switch = " + dpid + "\nRule Count: " + aliases.size());
+						//logger.debug(cAlias.toString());
+						//logger.debug(fAlias.toString());
+						
+						return false;
+					}
 				}
 			}
 		}
+		catch(ConcurrentModificationException e){
+//			logger.debug("Concurrent Modification Exceptions");
+		}
 		
 		// No flow table conflicts, allow rule to be written
-		logger.debug("-----NO CONFLICTS, ALLOW RULE-------");
+//		logger.debug("-----NO CONFLICTS, ALLOW RULE-------");
 		
 		aliases.add(cAlias);
 		//putAliasSet(dpid, aliases);
@@ -134,14 +142,19 @@ public class Secure {
 						// then we can't consider them when deciding to refuse the packet for
 						// a handshake.
 		//				logger.debug("-------PACKET OUT REJECTED-------");
-	//					logger.debug("Refused packet = " + po);
+						//logger.debug("Refused packet = " + po);
+						//logger.debug(cPO.toString());
+						//logger.debug(fAlias.toString());
 						packetRejected++;
 						return false;
 					}
 					else if(checkDataLayerType(cPO, fAlias) && checkNetworkProtocol(cPO, fAlias) &&
 							!sourceUnionEmpty && !destinationUnionEmpty){
 	//					logger.debug("-------PACKET OUT REJECTED-------");
-	//					logger.debug("Refused packet = " + po);
+						
+						//logger.debug("Refused packet = " + po);
+						//logger.debug(cPO.toString());
+						//logger.debug(fAlias.toString());
 						packetRejected++;
 						return false;
 					}									
@@ -212,7 +225,7 @@ public class Secure {
 			}
 			// Delete all the aliases that we found that match (might be too liberal, especially since there
 			// is no guarantee that the equality function is specific enough)
-			logger.debug("Deleting " + toDelete.size() + " Rules");
+			//logger.debug("Deleting " + toDelete.size() + " Rules");
 			for(Alias del : toDelete){
 				aliases.remove(del);
 			}
@@ -410,7 +423,7 @@ public class Secure {
 	 * @return true or false depending on if the lists are equal to each other
 	 */
 	
-	private boolean checkActions(CopyOnWriteArrayList<OFAction> cActions, CopyOnWriteArrayList<OFAction> fActions){
+	private boolean checkActions(Vector<OFAction> cActions, Vector<OFAction> fActions){
 		
 		if(cActions == null && fActions == null){
 			// both are null, so both are drops, allow
@@ -427,6 +440,7 @@ public class Secure {
 		
 		// If they aren't the same size they can't be the same action as a whole
 		if(cActions.size() != fActions.size()){
+			//logger.debug("Actions are not the same size");
 			return false;
 		}
 		
@@ -440,7 +454,7 @@ public class Secure {
 					if(checkInnerAction(cAction, fActions.get(i))){
 						// then the inner actions are the same
 						// get rid of the action in the current rule set
-						fActions.remove(i);
+						//fActions.remove(i);
 						break;
 					}
 					else {
@@ -585,7 +599,7 @@ public class Secure {
 	
 	public void incrementRuleCount(){
 		this.rulesInstalled++;
-		logger.debug("Rule Count: " + this.rulesInstalled);
-		logger.debug("Packets Rejected: " + this.packetRejected);
+//		logger.debug("Rule Count: " + this.rulesInstalled);
+//		logger.debug("Packets Rejected: " + this.packetRejected);
 	}
 }

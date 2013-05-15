@@ -1,0 +1,11 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We have created Floodlight-CD, which incorporates security policy enforcement into the Floodlight OpenFlow controller.
+Floodlight-CD successfully performs conflict detection to address several security issues facing Floodlight today.
+We secured Floodlight against two significant attacks.
+The first being malicious applications attempting to subvert existing rules in a switch's flow table.
+This was achieved through the use of alias-reduced rules combined with pairwise comparison of rule combinations on a single switch.
+The second attack, controller based rule evasion, was prevented by forcing the controller to check outgoing packets against the switch's flow table.
+Both of these attacks were mitigated with a 15\% overhead over Floodlight as it stands today. 
+

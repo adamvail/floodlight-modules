@@ -92,7 +92,10 @@ public abstract class OFSwitchBase implements IOFSwitch {
     protected Role role;
     protected String stringId;
     
+	protected static Logger logger = LoggerFactory.getLogger(Secure.class);
     private Secure secure;
+    private long averageTime = 0;
+    private long count = 0;
 
     /**
      * Members hidden from subclasses
@@ -199,7 +202,7 @@ public abstract class OFSwitchBase implements IOFSwitch {
     	
     	// Time how long the function takes
   //  	long start = System.nanoTime();
-    	
+   	
     	if(m.getType() == OFType.FLOW_MOD){
 	    		if(!secure.checkFlowRule((OFFlowMod)m, this.getId(), this)){
 				// throw an exception or something
@@ -211,12 +214,12 @@ public abstract class OFSwitchBase implements IOFSwitch {
     		}
 	    	
 	    	((OFFlowMod)m).setFlags((short)(((OFFlowMod)m).getFlags() | OFFlowMod.OFPFF_SEND_FLOW_REM));
-	    	secure.incrementRuleCount();
+	    	//secure.incrementRuleCount();
     	}
     	else if(m.getType() == OFType.PACKET_OUT && !secure.checkPacketOut((OFPacketOut)m, this.getId())) {
     		return;
     	}
-    	
+   	
         Map<IOFSwitch,List<OFMessage>> msg_buffer_map = local_msg_buffer.get();
         List<OFMessage> msg_buffer = msg_buffer_map.get(this);
         if (msg_buffer == null) {
@@ -232,26 +235,17 @@ public abstract class OFSwitchBase implements IOFSwitch {
             this.write(msg_buffer);
             msg_buffer.clear();
         }
-     //   long end = System.nanoTime();
-       // long duration = end - start;
+        /*
+        long end = System.nanoTime();
+        long duration = end - start;
+       
+        long newVal = (this.averageTime * this.count) + duration;
+        this.count++;
+        this.averageTime = newVal / this.count;
+        logger.debug("Avg timing: " + (this.averageTime * 1e9) + " nanoseconds");
+        logger.debug("Count: " + this.count);
+ */
        // saveTimingData("insecurePing", duration + "");
-    }
-    
-    private void saveTimingData(String filename, String output){
-	  PrintWriter pw = null;
-
-	  try {
-	     File file = new File(filename);
-	     FileWriter fw = new FileWriter(file, true);
-	     pw = new PrintWriter(fw);
-	     pw.println(output);
-	  } catch (IOException e) {
-	     e.printStackTrace();
-	  } finally {
-	     if (pw != null) {
-	        pw.close();
-	     }
-	  }
     }
 
     @Override
@@ -264,7 +258,7 @@ public abstract class OFSwitchBase implements IOFSwitch {
     public void write(List<OFMessage> msglist, 
                       FloodlightContext bc) throws IOException {
         for (OFMessage m : msglist) {
-        	        	
+       	        	
         	if(m.getType() == OFType.FLOW_MOD && !secure.checkFlowRule((OFFlowMod)m, this.getId(), this)){
     			// throw an exception or something
     			// Don't allow the rule to be written to the switch
