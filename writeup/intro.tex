@@ -3,11 +3,11 @@
 
 In recent years the advent of software defined networking (SDN) has introduced a major disruption into the networking space.
 Traditional networks employ vast amounts of hardware that all need to be configured and managed manually by teams of trained professionals.
-Manual interaction with so many different pieces of hardware causes the network to be susceptible to costly human-errors. 
+Manual interaction with so many different pieces of hardware causes the network to be susceptible to costly human errors. 
 The need for a scalable network configuration and management system has led to SDN's rapid rise in popularity.
 SDN implementations today require switches that can take direction from a centralized controller.
 These switches can be software based, such as Open vSwitch \cite{DBLP:conf/hotnets/PfaffPACKS09}, or hardware switches which offer traditional and SDN modes of operation.
-Switches deployed today for use in a software defined network generally communicate to the controller using the OpenFlow protocol.
+Switches deployed today for use in a software defined network generally communicate with the controller using the OpenFlow protocol.
 
 OpenFlow \cite{McKeown:2008:OEI:1355734.1355746} is a standardized protocol that facilitates coordination between the data plane, which resides in the switch, and the control plane, which resides in the controller.
 The controller makes high level decisions, such as routing, dropping a packet, or forwarding a packet, and communicates these decisions using OpenFlow messages.

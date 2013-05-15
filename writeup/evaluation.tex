@@ -18,7 +18,6 @@ Therefore, for every ping, the forward rule, the reverse rule, the request packe
 	\end{center}
 \end{figure*}
 
-The tests were done with varying numbers of switches and hosts.
 Figure \ref{fig:eval_single} shows the performance of Floodlight-CD with a single switch and a varying number of hosts.
 The addition of conflict detection results in a consistent overhead of about 15\%, regardless of the number of hosts.
 
@@ -31,7 +30,7 @@ The addition of conflict detection results in a consistent overhead of about 15\
 \end{figure*}
 
 Figure \ref{fig:eval_multi} shows the timing data for topologies with multiple switches.
-All of these tests were run using the tree topology where the number of levels of the tree were varied.
+All of these tests were run using a binary tree topology where the number of levels of the tree were varied.
 Each leaf switch had two hosts connected to it.
 We found these tests to truly exercise Floodlight-CD due to the number of switches involved in a single ping between hosts on opposite sides of the tree.
 When a host pings a destination on the other side of the tree, the forward and reverse rules must be checked and installed on (2*L) - 1 switches, where L is the number of levels of the tree. 

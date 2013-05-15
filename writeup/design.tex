@@ -4,7 +4,8 @@
 We have extended the Floodlight OpenFlow controller to ensure two conflicting OpenFlow rules can not be present on a switch at the same time.
 Since Floodlight has a global view of the network, it is in the best position to arbitrate which rules an application is allowed to install on a switch and which rules should be disallowed.
 Much of our work for Floodlight was inspired by FortNOX \cite{Porras:2012:SEK:2342441.2342466}.
-FortNOX created a security enforcement kernel for the NOX OpenFlow controller \cite{Gude:2008:NTO:1384609.1384625} which did similar things to what we have created in Floodlight.
+FortNOX created a security enforcement kernel for the NOX OpenFlow controller \cite{Gude:2008:NTO:1384609.1384625} which provided us with a foundation for building conflict detection within
+Floodlight.
 Unfortunately, NOX is no longer under development and FortNOX was never released to the public.
 The need for functionality similar to FortNOX in a widely supported controller motivated us to extend Floodlight.
 We also discovered several shortcomings of FortNOX which we addressed in our Floodlight implementation.
@@ -67,7 +68,7 @@ The conflict detection algorithm works as follows:
 \item If both unions result in non-empty sets, then there is a conflict. Otherwise, allow the candidate rule and add cARR to the switch's set of active ARRs.
 \end{enumerate} 
 
-Non-empty union sets indicates a conflict because this means that both rules have a path from the same source and to the same destination while having opposite actions.
+A conflict is detected if and only if both union sets are non-empty because this means that both rules have a path from the same source and to the same destination while having opposite actions.
 As an example, consider the ARRs we created above where the static firewall rule is currently in the switch (fARR) and the subversive application's remapping rule is the candidate (cARR):
 
 \begin{enumerate}
@@ -89,7 +90,7 @@ As an example, consider the ARRs we created above where the static firewall rule
 
 This leaves the two sets non-empty, and Floodlight-CD sees that these two rules are in conflict.
 In the case where a rule has wildcarded fields, the union includes the ``widest'' possible rule.
-For example, if the static firewall rule wanted to drop all traffic to \texttt{h8} regardless of destination port then the union of the destination sets would be:
+For example, if the static firewall rule wanted to drop all traffic to \texttt{h8} regardless of the destination port then the union of the destination sets would be:
 \begin{align}
 \begin{aligned}
 \{(h8)\} \cup \{(h7:80),(h8:80)\} =  \{(h7:80),(h8)\} \nonumber

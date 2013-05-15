@@ -1,0 +1,6 @@
+The code is meant to fit into the Floodlight tree. The secure and alias classes are standalone.
+
+The OFSwitchBase class is meant to replace the current OFSwitchBase class currently in net/floodlight/controller/core/OFSwitchBase.
+The secure code is called by the write() function in OFSwitchBase.
+
+The SecureFlowRemovedListner module is intended to be run as a normal application and thus must be included in configuration files.

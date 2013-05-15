@@ -37,14 +37,14 @@ Then the subversion rules would be as follows:
 
 \begin{align}
   Sw1: (h1) \Rightarrow (h6): set(src=h6, dest=h7) \\
-  Sw1: (h7) \Rightarrow (h6): set(src=h6, dest=h1) \\
+%  Sw1: (h7) \Rightarrow (h6): set(src=h6, dest=h1) \\
   Sw2: (h6) \Rightarrow (h7): set(dest=h8) \\
-  Sw2: (h8) \Rightarrow (h6): set(src=h7)
+%  Sw2: (h8) \Rightarrow (h6): set(src=h7)
 \end{align}
 
 Assuming the malicious application installs each of these rules in turn, each is considered as a candidate ARR (cARR) and checked pairwise against existing rules according to the procedure described in section \ref{subsec:conflict} above. 
 Recall that the algorithm builds the union of source and destination rules and actions between the cARR and each fARR in the flow table, and detects a conflict if actions differ and the intersection of the sources and destinations of the ARRs are non-empty. 
-In this case though, testing the insertion of the rules into Sw1 would yield a empty destination set since \texttt{h8} does not appear in the cARRs' destination sets. 
+In this case though, testing the insertion of the rules into Sw1 would yield an empty destination set since \texttt{h8} does not appear in the cARRs' destination sets. 
 Similarly, \texttt{h1} does not appear in the cARRs' source sets for the rules inserted into Sw2, so they would be inserted successfully. 
 
 Like FortNOX, Floodlight-CD does not prevent tunneling across multiple switches.

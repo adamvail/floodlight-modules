@@ -4,7 +4,7 @@
 Floodlight-CD consists of two classes added to Floodlight's core and one application that runs on top of Floodlight.
 The conflict detection mechanisms get called by interposing on Floodlight's internal representation of OpenFlow switches.
 Since this is done in Floodlight's core, no alterations to current applications are needed.
-The detection class is invoked when an application attempts to write either a \texttt{FLOW\_MOD} message of a \texttt{PACKET\_OUT} message to a switch.
+The detection class is invoked when an application attempts to write either a \texttt{FLOW\_MOD} message or a \texttt{PACKET\_OUT} message to a switch.
 If a conflict is detected then the request is dropped and an error is logged for administrator review.
 Otherwise, the \texttt{OFPFF\_SEND\_FLOW\_REM} flag is set to request that the switch inform the controller when the rule is removed from its flow table.
 
