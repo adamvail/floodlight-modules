@@ -98,4 +98,22 @@ For example, if the static firewall rule wanted to drop all traffic to \texttt{h
 
 This still yields a non-empty set for both the source and destination sets and therefore is correctly identified as a conflict and disallowed.
 
+\subsection{Controller Based Rule Evasion}
+\label{subsec:cbre}
+
+FortNOX only focuses on examining and filtering out conflicting flow rules from being inserted into switches. 
+However, packet rewriting and manipulation is not limited to flow rules inserted into the switches themselves. 
+When a switch receives a packet it does not know how to handle, it sends it to the controller to be processed.
+In most cases, this results in flow rules being installed in the switch.
+Once the controller has finished its work, it then forwards the packet back to the switch with the appropriate actions set.
+A malicious application can install a rule in a switch's flow table to forward all its packets to the controller.
+At this point, the application can arbitrarily rewrite a packet \emph{in the controller} in order to subvert rules, before sending it back to the switch to be forwarded. 
+When a switch receives a packet from a controller, it simply forwards the packet according to its actions without checking it against the flow table.
+Therefore, the application can effectively forward packets within the network without having them checked against a single flow table.
+We call this attack \emph{controller based rule evasion}.
+
+In order to defend against malicious flow subversion at the controller level, Floodlight-CD examines the actions of \texttt{PACKET\_OUT} messages. 
+That is, we examine outgoing packets to see if they conflict with any active ARRs currently in the switch. 
+If there is a conflict, the packet is dropped and the event is logged.
+
 
