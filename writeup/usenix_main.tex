@@ -32,7 +32,7 @@
 \date{}
 
 %make title bold and 14 pt font (Latex default is non-bold, 16 pt)
-\title{\Large \bf Securing the Floodlight OpenFlow Controller}
+\title{\Large \bf Floodlight-CD: Securing the Floodlight OpenFlow Controller}
 
 %for single author (just remove % characters)
 \author{
@@ -55,11 +55,14 @@ University of Wisconsin-Madison
 
 
 \subsection*{Abstract}
-In most OpenFlow (OF) controller implementions, applications can insert flow rules into a switch that conflict with and subvert the intent of existing rules. A prominent example of this is dynamic tunnelin, in which a malicious application inserts rules into an OF switch to route packets around a firewall. 
+In most OpenFlow (OF) controller implementions, applications can insert flow rules into a switch that conflict with and subvert the intent of existing rules. 
+A prominent example of this is dynamic tunneling, in which a malicious application inserts rules into an OF switch to route packets around a firewall. 
 
-We extend the Floodlight OF controller to incorporate security-policy enforcement. In particular, we adopt the alias-reduced rule conflict-detection approach introduced in FortNOX and implement it in Floodlight, and implement a system to prevent what we call controller-based rule evasion. 
+We created such a subversive application for the Floodlight controller to explore the inefficiencies in current conflict detection.
+We then extended the Floodlight OF controller to incorporate security-policy enforcement to defend against such attacks. 
+In particular, we adopt the alias-reduced rule conflict-detection approach introduced in FortNOX \cite{Porras:2012:SEK:2342441.2342466} to protect against rule subversion as well as an implemention to prevent a novel attack called controller-based rule evasion. 
 
-Floodlight-CD successfully prevents both single-switch dynamic tunneling and controller based rule evansion, and incurs approximately 15\% over a baseline Floodlight configuration.
+Floodlight-CD successfully prevents both single-switch dynamic tunneling and controller based rule evasion, while incuring an approximately 15\% overhead over a baseline Floodlight configuration.
 
 \input{intro}
 \input{motivation}

@@ -12,3 +12,9 @@ The application listens for \texttt{FLOW\_REMOVED} messages from switches and up
 This is in contrast to FortNOX, which keeps internal timers for all flow rules and, if necessary, manually deletes rules from switches upon timeout.
 By allowing the switch to inform the controller of a timeout, we alleviate the controller from extra work, especially for large flow tables, as well as obtain full benefit of idle timeouts.
 
+Having the switch notify the controller to maintain its view of the switch's flow table is different than FortNOX's implementation.
+FortNOX uses internal timers for all flow rules and manually removes rules from the switches (if needed).
+This effectively disables the ability to use idle timeouts since a long duration flow will have its rules removed prematurely.
+Floodlight-CD's use of the \texttt{FLOW\_REMOVED} callback alleviates the stress on the controller of having to maintain many internal timers.
+It also allows Floodlight-CD to take full advantage of idle timeouts and thus not have to process unnecessary packets.
+
