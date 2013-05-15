@@ -19,9 +19,21 @@ Floodlight-CD prevents this by checking \texttt{PACKET\_OUT} messages in additio
 %In order to defend against malicious flow subversion at the controller level, our implementation examines the actions of both attempted flow-table insertions, and of \texttt{PACKET\_OUT} events. That is, we examine outgoing packets to see if they conflict with any of our alias reduced rules in our in-memory mapping of allowed actions. This prevents malicious actions by applications both at the flow-rule level and the controller level.
 
 \subsection{Malicious Tunneling Across Switches}
-One of the more substantial issues with the FortNOX approach is that it only verifies that a candidate rule is not in conflict with the current ruleset of a \emph{single} switch. Enforcement at the level of a single switch is sufficient only to thwart the simplest attacks, such as the single-rule dynamic tunneling attack outlined above in \ref{subsec:arr}. However, when a Floodlight application can install rules into multiple switches and/or manipulate packets flowing through multiple switches, installing a candidate ARR requires verifying that its installation would not create a flow that would subvert any existing flow restrictions throughout the network. In other words, to adequately protect the \emph{network}, enforcement must be considered on the level of the whole network, not just a single switch.
+Another substantial issue with the FortNOX approach is that it only verifies that a candidate rule is not in conflict with the current ruleset of a \emph{single} switch. 
+Enforcement at the level of a single switch is sufficient only to thwart the simplest attacks, such as the single-rule dynamic tunneling attack outlined above in \ref{subsec:arr}. 
+However, when a Floodlight application can install rules into multiple switches and/or manipulate packets flowing through multiple switches, installing a candidate ARR requires verifying that its installation would not create a flow that would subvert any existing flow restrictions throughout the network. 
+In other words, to adequately protect the \emph{network}, enforcement must be considered on the level of the whole network, not just a single switch.
 
-Consider a simple extension to the dynamic tunneling attack, where the legitimate rule is once again $(h1) \Rightarrow (h8:80): DROP$. Then the subversion rules we be as follows: 
+\begin{figure*}[ht!]
+	\begin{center}
+		\includegraphics[width=\columnwidth]{figs/multiSwitch_diagram.png}
+		\caption{Dynamic flow tunneling using multiple switches.}
+		\label{fig:dft_multi}
+	\end{center}
+\end{figure*}
+
+Consider a simple extension to the dynamic tunneling attack, depicted in figure \ref{fig:dft_multi}, where the legitimate rule is once again $(h1) \Rightarrow (h8:80): DROP$. 
+Then the subversion rules would be as follows: 
 
 \begin{align}
   Sw1: (h1) \Rightarrow (h6): set(src=h6, dest=h7) \\
@@ -30,7 +42,15 @@ Consider a simple extension to the dynamic tunneling attack, where the legitimat
   Sw2: (h8) \Rightarrow (h6): set(src=h7)
 \end{align}
 
-Assuming the malicious application installs each of these rules in turn, each is considered as a candidate ARR (cARR) and checked pairwise against existing rules according to the procedure described in Subsection \ref{subsec:conflict} above. Recall that the algorithm builds the union of source and destination rules and actions between the cARR and each fARR in the flow table, and detects a conflict if actions differ and the intersection of the sources and destinations of the ARRs are non-empty. In this case though, testing the insertion of the rules into Sw1 would yield a empty destination set since \texttt{h8} does not appear in the cARRs' destination sets. Similarly, \texttt{h1} does not appear in the cARRs' source sets for the rules inserted into Sw2, so they would be inserted successfully. 
+Assuming the malicious application installs each of these rules in turn, each is considered as a candidate ARR (cARR) and checked pairwise against existing rules according to the procedure described in section \ref{subsec:conflict} above. 
+Recall that the algorithm builds the union of source and destination rules and actions between the cARR and each fARR in the flow table, and detects a conflict if actions differ and the intersection of the sources and destinations of the ARRs are non-empty. 
+In this case though, testing the insertion of the rules into Sw1 would yield a empty destination set since \texttt{h8} does not appear in the cARRs' destination sets. 
+Similarly, \texttt{h1} does not appear in the cARRs' source sets for the rules inserted into Sw2, so they would be inserted successfully. 
 
-Our implementation follows that of FortNOX in blocking the insertion of conflicting rules on a single switch, but also does not implement conflict detection across a whole network. One approach is as follows. Instead of simply checking each cARR pairwise against each fARR \emph{only} for the target switch's alias ruleset and rejecting or accepting the cARR at that stage, the algorithm can continue to build a \emph{complete union set} (CUS) across the alias rulesets of all switches in a potential flow's forwarding path, taking into account the potential ramifications of the insertion of each candidate rule into each switch. At the end, we would reject a candidate rule if and only if the intersection of the CUS and fARR destination and source sets are both non-empty. 
+Like FortNOX, Floodlight-CD does not prevent tunneling across multiple switches.
+We explore the challenges and possible solutions to this problem in the next section.
+
+
+%Instead of simply checking each cARR pairwise against each fARR \emph{only} for the target switch's alias ruleset and rejecting or accepting the cARR at that stage, the algorithm can continue to build a \emph{complete union set} (CUS) across the alias rulesets of all switches in a potential flow's forwarding path, taking into account the potential ramifications of the insertion of each candidate rule into each switch. 
+%At the end, we would reject a candidate rule if and only if the intersection of the CUS and fARR destination and source sets are both non-empty. 
 
