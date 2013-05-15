@@ -2,18 +2,15 @@
 \label{sec:implementation}
 
 Floodlight-CD consists of two classes added to Floodlight's core and one application that runs on top of Floodlight.
-The conflict detection mechanisms get called by interposing on Floodlight's interal representation of OpenFlow switches.
+The conflict detection mechanisms get called by interposing on Floodlight's internal representation of OpenFlow switches.
 Since this is done in Floodlight's core, no alterations to current applications are needed.
 The detection class is invoked when an application attempts to write either a \texttt{FLOW\_MOD} message of a \texttt{PACKET\_OUT} message to a switch.
 If a conflict is detected then the request is dropped and an error is logged for administrator review.
 Otherwise, the \texttt{OFPFF\_SEND\_FLOW\_REM} flag is set to request that the switch inform the controller when the rule is removed from its flow table.
 
 The application listens for \texttt{FLOW\_REMOVED} messages from switches and updates Floodlight-CD's internal view of the switch's flow table.
-This is in contrast to FortNOX, which keeps internal timers for all flow rules and, if necessary, manually deletes rules from switches upon timeout.
-By allowing the switch to inform the controller of a timeout, we alleviate the controller from extra work, especially for large flow tables, as well as obtain full benefit of idle timeouts.
-
-Having the switch notify the controller to maintain its view of the switch's flow table is different than FortNOX's implementation.
-FortNOX uses internal timers for all flow rules and manually removes rules from the switches (if needed).
+Having the switch notify the controller to maintain its view of the switch's flow table is in contrast with FortNOX's implementation.
+FortNOX uses internal timers for all flow rules and manually removes rules from the switches (if their hard timeout has not already been met).
 This effectively disables the ability to use idle timeouts since a long duration flow will have its rules removed prematurely.
 Floodlight-CD's use of the \texttt{FLOW\_REMOVED} callback alleviates the stress on the controller of having to maintain many internal timers.
 It also allows Floodlight-CD to take full advantage of idle timeouts and thus not have to process unnecessary packets.

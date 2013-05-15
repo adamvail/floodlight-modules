@@ -2,28 +2,28 @@
 \label{sec:future}
 
 In order to defend against multi-switch dynamic tunneling, we need to consider all flow rules across the entire path of a packet.
-Instead of only checking each cARR pairwise against each fARR for the current switch, the algorithm can continue to build a \emph{complete union set} (CUS) across the alias rulesets of all switches in a potential flow's forwarding path, taking into account the potential ramifications of the insertion of each candidate rule into each switch. 
+Instead of only checking each cARR pairwise against each fARR for the current switch, the algorithm can continue to build a \emph{complete union set} (CUS) across the alias rule sets of all switches in a potential flow's forwarding path, taking into account the potential ramifications of the insertion of each candidate rule into each switch. 
 This presents several issues that would need to be overcome.
 First, Floodlight-CD would need to be able to construct the path that it expects the packet to take through the network.
 While this is possible, since the controller is maintaining its view of all the switches' flow tables, it would incur a large overhead.
 The pairwise comparisons of the candidate rule against multiple flow tables would be very costly. 
-Instead of comparing against the entirity of each flow table a network-wide map of multi switch flows could be constructed and maintained.
-Although, with a large network it would likely grow to become very large, consuming too much memory, and inefficient for comparisons.
+Instead of comparing against the entirety of each flow table a network-wide map of multi switch flows could be constructed and maintained.
+Although, even with a modest sized network it would likely grow to become very large, consuming too much memory, and be inefficient for comparisons.
 
 We believe that an algorithmic approach to solving both the time and space issues is possible.
 It isn't clear what exactly this would entail.
 At the very least there would need to be some aggregation of flow rules in order to minimize the number of comparisons per switch.
-This aggregation would not only save time, but also space, and would allow for large topologies to be supported by Floodlight-CD.
+This aggregation would allow for large topologies to be supported by Floodlight-CD.
 
-A second area of future work that we considered is to extend the architecture of Floodlight to provice an access control system for network devices.
-Access control mechanisms have been in use in operating systems for many years and we believe can be applicable to realm of SDN as well.
+A second area of future work that we considered is to extend the architecture of Floodlight to provide an access control system for network devices.
+Access control mechanisms have been in use in operating systems for many years and we believe they are applicable to realm of SDN as well.
 We have distinguished two levels within the network where access control would make sense.
 The first would be at the network level.
 An administrator could specify for each application, which network devices that the application is allowed to communicate with.
-For example, consider a univeristy network.
+For example, consider a university network.
 Each department is allowed to have applications talk to their own network devices in their building, but should not be able to burden critical network wide devices with unneeded communication.
 
 The second level that access control could be applied to is at the action level.
 In this case each switch would have a specification for which applications have read-only or read-write access to its flow table.
-This would be useful since an administrator could allow an application to receive flow statistics from a switch without giving it the ability in install its own flow rules.
+This would be useful since an administrator could allow an application to receive flow statistics from a switch without giving it the ability to install its own flow rules.
 

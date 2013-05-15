@@ -6,7 +6,7 @@ Note that all of our critiques are based solely on the information provided in \
 
 \subsection{Controller-Based Rule Evasion}
 As we mentioned in section \ref{subsec:cbre}, FortNOX does not prevent controller based rule evasion.
-We found this to be a major shortcoming since this allows an application subvert any rule in a switch's flow table.
+We found this to be a major shortcoming since this allows an application to subvert any rule in a switch's flow table.
 A malicious application doesn't even need a dummy host in place to perform this attack.
 Floodlight-CD prevents this by checking \texttt{PACKET\_OUT} messages in addition to flow rules before forwarding a packet to a switch. 
 %FortNOX only focuses on examining and filtering out conflicting \emph{flow rules} from being inserted into switches. 
@@ -19,7 +19,7 @@ Floodlight-CD prevents this by checking \texttt{PACKET\_OUT} messages in additio
 %In order to defend against malicious flow subversion at the controller level, our implementation examines the actions of both attempted flow-table insertions, and of \texttt{PACKET\_OUT} events. That is, we examine outgoing packets to see if they conflict with any of our alias reduced rules in our in-memory mapping of allowed actions. This prevents malicious actions by applications both at the flow-rule level and the controller level.
 
 \subsection{Malicious Tunneling Across Switches}
-Another substantial issue with the FortNOX approach is that it only verifies that a candidate rule is not in conflict with the current ruleset of a \emph{single} switch. 
+Another substantial issue with the FortNOX approach is that it only verifies that a candidate rule is not in conflict with the current rule set of a \emph{single} switch. 
 Enforcement at the level of a single switch is sufficient only to thwart the simplest attacks, such as the single-rule dynamic tunneling attack outlined above in \ref{subsec:arr}. 
 However, when a Floodlight application can install rules into multiple switches and/or manipulate packets flowing through multiple switches, installing a candidate ARR requires verifying that its installation would not create a flow that would subvert any existing flow restrictions throughout the network. 
 In other words, to adequately protect the \emph{network}, enforcement must be considered on the level of the whole network, not just a single switch.
@@ -51,6 +51,6 @@ Like FortNOX, Floodlight-CD does not prevent tunneling across multiple switches.
 We explore the challenges and possible solutions to this problem in the next section.
 
 
-%Instead of simply checking each cARR pairwise against each fARR \emph{only} for the target switch's alias ruleset and rejecting or accepting the cARR at that stage, the algorithm can continue to build a \emph{complete union set} (CUS) across the alias rulesets of all switches in a potential flow's forwarding path, taking into account the potential ramifications of the insertion of each candidate rule into each switch. 
+%Instead of simply checking each cARR pairwise against each fARR \emph{only} for the target switch's alias rule set and rejecting or accepting the cARR at that stage, the algorithm can continue to build a \emph{complete union set} (CUS) across the alias rule sets of all switches in a potential flow's forwarding path, taking into account the potential ramifications of the insertion of each candidate rule into each switch. 
 %At the end, we would reject a candidate rule if and only if the intersection of the CUS and fARR destination and source sets are both non-empty. 
 

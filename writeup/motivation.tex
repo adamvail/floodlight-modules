@@ -1,7 +1,7 @@
 \section{Motivation}
 \label{sec:motivation}
 
-We see two particularily useful scenarios for conflict detection within Floodlight.
+We see two particularly useful scenarios for conflict detection within Floodlight.
 
 \subsection{Debugging Competing Applications}
 It is very difficult for an administrator to gain a full understanding of exactly what flow rules get inserted into a switch. 
@@ -19,10 +19,10 @@ This can make it extremely difficult for an administrator to investigate undesir
 The difficulty is exacerbated by the fact that rules are removed from switches due to idle or hard timeouts.
 By the time an administrator can inspect the flow table of a switch, its state has most likely already changed.
 
-Thus, it is extremely useful for an admistrator to know when two or more applications are installing rules which logically conflict with each other.
-Since all flow rules are installed by the controller, it is the controller that has the ability to build network-wide view of all the flow tables.
-This allows the controller to make the difinitive decision to allow, or disallow, a rule to be written to a switch.
-Floodlight-CD allows an administrator to debug unintended network behavior due to rule conflicts faster and resolve these conflicts between competing applications.
+Thus, it is extremely useful for an administrator to know when two or more applications are installing rules which logically conflict with each other.
+Since all flow rules are installed by the controller, it is the controller that has the ability to build a network-wide view of all the flow tables.
+This allows the controller to make the definitive decision to allow, or disallow, a rule to be written to a switch.
+Floodlight-CD allows an administrator to quickly debug unintended network behavior due to rule conflicts and resolve these conflicts between competing applications.
 
 % Move on the an illustration of a malicious app, talk about the firewall application and how to subvert it, using Floodlight
 % in a large network, different groups may want to handle the traffic differently, this would be when they could get the ability to run their own app
@@ -38,7 +38,7 @@ Floodlight-CD allows an administrator to debug unintended network behavior due t
 \subsection{Malicious Rule Subversion}
 While unintentional misconfiguration of applications running on a controller are a definite possibility, we focus on the case where an application author is being intentionally malicious.
 % Need more info about dft
-As an illustration, we created a simple scenario of dynamic flow tunneling where a malicous application effectively bypasses a firewall rule intended to drop traffic between two hosts.
+As an illustration, we created a simple scenario of dynamic flow tunneling where a malicious application effectively bypasses a firewall rule intended to drop traffic between two hosts.
 Figure \ref{fig:dft_single} depicts our example topology.
 While this is a somewhat contrived situation (due to the limited number of hosts and simplicity of the applications), the ideas can be extended to larger, real world applications.
 
@@ -60,7 +60,7 @@ This is done by having \texttt{h1} send packets towards a dummy host using port 
 \end{aligned}
 \end{align}
 
-When the switch sees packets destined for the dummy host it, dynamically installs a rule to remap the destinations of those packets from \texttt{h7} to \texttt{h8}.
+When the switch sees packets destined for the dummy host, it dynamically installs a rule to remap the destinations of those packets from \texttt{h7} to \texttt{h8}.
 Since a flow can only match a single rule in a flow table, once the switch remaps the packets' destination, it forwards them on to \texttt{h8} without ever checking them against the firewall's static rule.
 %As with network debugging, the controller has a complete view of network and is therefore in a position to arbitrate which rules should be disallowed due to logical conflicts with existing flow rules.
 

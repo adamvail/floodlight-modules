@@ -2,7 +2,7 @@
 \label{sec:design}
 
 We have extended the Floodlight OpenFlow controller to ensure two conflicting OpenFlow rules can not be present on a switch at the same time.
-Since Floodlight has a global view of the network it is in the best position to arbitrate which rules an application is allowed to install on a switch and which rules should be disalowed.
+Since Floodlight has a global view of the network, it is in the best position to arbitrate which rules an application is allowed to install on a switch and which rules should be disallowed.
 Much of our work for Floodlight was inspired by FortNOX \cite{Porras:2012:SEK:2342441.2342466}.
 FortNOX created a security enforcement kernel for the NOX OpenFlow controller \cite{Gude:2008:NTO:1384609.1384625} which did similar things to what we have created in Floodlight.
 Unfortunately, NOX is no longer under development and FortNOX was never released to the public.
@@ -15,10 +15,10 @@ In order to detect rule conflicts, we borrowed the idea presented in FortNOX of 
 An ARR is simply an expansion of a rule's match headers and actions.
 This allows the controller to see the full effect the rule will have on flows moving through the switch, incorporating both the input (the match) and the output (the result of the applied actions) of a given rule.
 Floodlight-CD does a pairwise comparison between the candidate rule's ARR (rule attempting to be installed in the switch) against a table of active ARRs representing the flow table of a switch.
-If no conflict is found then the candidate rule is allowed to be written to the switch.
+If no conflict is found then the candidate rule is allowed.
 To illustrate the use of ARRs we return to our previous example of ``dynamic-flow tunneling.'' 
 
-Recall that the firewall application installs a static flow rule upon switch connection that states:
+Recall that the firewall application installs a static flow rule upon switch connection:
 
 \begin{align}
 \begin{aligned}
@@ -27,7 +27,7 @@ Recall that the firewall application installs a static flow rule upon switch con
 \end{aligned}
 \end{align}
 
-And the malicious application attempts to install a rule to bypass the firewall.
+And the malicious application attempts to install a rule to bypass the firewall:
 
 %In the attack, the subversive application dynamically installs a flow rule that will allow traffic from \texttt{h1} to be delivered to \texttt{h8} by remapping the destination of packets being sent from \texttt{h1} to a dummy host \texttt{h7} to instead be delivered to the destination of \texttt{h2:80}. Clearly, \texttt{h1} can effectively communicate with \texttt{h8} by sending its packets to \texttt{h7} instead.
 
@@ -62,8 +62,8 @@ When an application attempts to add a rule to the switch's flow table, Floodligh
 The conflict detection algorithm works as follows:
 \begin{enumerate}
 \item If the cARR and fARR have the same actions, then allow the candidate.
-\item If the cARR and fARR have any intersection in their source sets, then take the union of the two source sets.
-\item If the cARR and fARR have any intersection in their destination sets, then take the union of the two destination sets.
+\item If the cARR and fARR have a non-empty intersection in their source sets, then take the union of the two source sets.
+\item If the cARR and fARR have a non-empty intersection in their destination sets, then take the union of the two destination sets.
 \item If both unions result in non-empty sets, then there is a conflict. Otherwise, allow the candidate rule and add cARR to the switch's set of active ARRs.
 \end{enumerate} 
 
@@ -75,7 +75,7 @@ As an example, consider the ARRs we created above where the static firewall rule
 \item The two source sets intersect, therefore we take the union of the sets:
 \begin{align}
 \begin{aligned}
-\{(h1)\} \cup \{(h1)\} = (h1) \nonumber
+\{(h1)\} \cup \{(h1)\} = \{(h1)\} \nonumber
 \end{aligned}
 \end{align}
 \item The destination sets intersect (h8:80), therefore we take the union of the sets:
@@ -105,7 +105,7 @@ FortNOX only focuses on examining and filtering out conflicting flow rules from 
 However, packet rewriting and manipulation is not limited to flow rules inserted into the switches themselves. 
 When a switch receives a packet it does not know how to handle, it sends it to the controller to be processed.
 In most cases, this results in flow rules being installed in the switch.
-Once the controller has finished its work, it then forwards the packet back to the switch with the appropriate actions set.
+Once the controller has finished its work, it then forwards the packet back to the switch with the appropriate set of actions.
 A malicious application can install a rule in a switch's flow table to forward all its packets to the controller.
 At this point, the application can arbitrarily rewrite a packet \emph{in the controller} in order to subvert rules, before sending it back to the switch to be forwarded. 
 When a switch receives a packet from a controller, it simply forwards the packet according to its actions without checking it against the flow table.
