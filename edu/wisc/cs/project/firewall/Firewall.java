@@ -162,7 +162,7 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
   
   @Override
   public void switchAdded(long switchId){
-  	dropPacketH1ToH8(floodlightProvider.getSwitches().get(switchId));
+  	dropPacketsH1ToH8(floodlightProvider.getSwitches().get(switchId));
   }
 
   @Override
