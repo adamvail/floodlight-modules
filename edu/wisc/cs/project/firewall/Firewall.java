@@ -159,6 +159,11 @@ public class Firewall implements IOFMessageListener, IFloodlightModule, IOFSwitc
     // TODO Auto-generated method stub
     dropPacketsH1ToH8(sw);
   }
+  
+  @Override
+  public void switchAdded(long switchId){
+  	dropPacketH1ToH8(floodlightProvider.getSwitches().get(switchId));
+  }
 
   @Override
   public void removedSwitch(IOFSwitch sw) {
